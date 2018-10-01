@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:checked="true"
+            android:id="@+id/progress"
+            android:icon="@drawable/ic_content_paste_black_24dp"
+            android:title="업무 수행" />
+        <item
+            android:id="@+id/notice"
+            android:icon="@drawable/img_board"
+            android:title="공지사항" />
+        <item
+            android:id="@+id/collabor"
+            android:icon="@drawable/img_user"
+            android:title="구성원" />
+        <item
+            android:id="@+id/manage"
+            android:icon="@drawable/ic_menu_manage"
+            android:title="설정" />
+    </group>
+
+    <item android:title="Communicate">
+        <menu>
+            <item
+                android:id="@+id/out"
+                android:icon="@drawable/img_logout"
+                android:title="나가기" />
+        </menu>
+    </item>
+
+</menu>

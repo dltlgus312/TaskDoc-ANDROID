@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_project"
+            android:icon="@drawable/img_describe"
+            android:checked="true"
+            android:title="프로젝트" />
+        <item
+            android:id="@+id/nav_task"
+            android:icon="@drawable/img_task"
+            android:title="개인업무 " />
+        <item
+            android:id="@+id/nav_information"
+            android:icon="@drawable/img_user"
+            android:title="내정보" />
+        <item
+            android:id="@+id/nav_board"
+            android:icon="@drawable/img_board"
+            android:title="게시판" />
+        <item
+            android:id="@+id/nav_manage"
+            android:icon="@drawable/img_settings"
+            android:title="관리" />
+    </group>
+
+    <item android:title="SIGN OUT">
+        <menu>
+            <item
+                android:id="@+id/nav_homepage"
+                android:icon="@drawable/img_homepage"
+                android:title="홈페이지" />
+            <item
+                android:id="@+id/nav_logout"
+                android:icon="@drawable/img_logout"
+                android:title="로그아웃" />
+        </menu>
+    </item>
+
+</menu>

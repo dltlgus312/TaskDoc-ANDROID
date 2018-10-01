@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".display.activity.ProjectActivity"
+    tools:showIn="@layout/app_bar_project"
+    android:id="@+id/content_project">
+
+    <fragment
+        android:id="@+id/content_change_fragment"
+        android:name="com.service.taskdoc.display.transitions.project.Empty"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+</FrameLayout>

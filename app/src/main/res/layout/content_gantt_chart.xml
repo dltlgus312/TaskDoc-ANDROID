@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context=".display.activity.GanttChartActivity"
+    tools:showIn="@layout/activity_gantt_chart">
+
+    <com.service.taskdoc.display.custom.ganttchart.GanttChart
+        android:id="@+id/ganttchart"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <SeekBar
+        android:id="@+id/hSeekbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:thumbTint="@color/colorWhiteGray"
+        android:progressBackgroundTint="@color/colorWhite"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="60dp"
+        android:layout_marginEnd="60dp"
+        android:layout_marginBottom="16dp"/>
+
+</FrameLayout>
