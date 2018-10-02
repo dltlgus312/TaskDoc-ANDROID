@@ -145,13 +145,12 @@ public class ChatRoomJoinService {
         });
     }
 
-    public void insert(ChatRoomJoinVO vo, UserInfos userInfos) {
+    public void insert(ChatRoomJoinVO vo) {
         Call<Integer> request = service.createChatRoomJoin(vo);
         request.enqueue(new Callback<Integer>() {
             @Override
             public void onResponse(Call<Integer> call, Response<Integer> response) {
                 if (response.body() != null && response.body() != -1) {
-                    userInfosList.add(userInfos);
                     networkSuccessWork.work();
                 }
             }

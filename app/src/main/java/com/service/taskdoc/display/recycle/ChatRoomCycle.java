@@ -53,6 +53,9 @@ public class ChatRoomCycle extends RecyclerView.Adapter<ChatRoomCycle.ViewHolder
         TextView mode = viewHolder.mode;
         TextView alarm = viewHolder.alarm;
 
+        users.setText("");
+        alarm.setText("");
+
         for (UserInfoVO v : vo.getUserList()) {
             if (users.getText().equals("")) {
                 users.setText(v.getUname());
@@ -66,6 +69,8 @@ public class ChatRoomCycle extends RecyclerView.Adapter<ChatRoomCycle.ViewHolder
         } else if(vo.getChatRoomVO().getCrmode() == 2){
             mode.setText(SUB);
         }
+
+        if (vo.getAlarm() > 0) alarm.setText(vo.getAlarm()+"");
 
         date.setText(vo.getChatRoomVO().getCrdate());
 

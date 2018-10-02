@@ -91,15 +91,7 @@ public class ChatContentsService {
             @Override
             public void onResponse(Call<ChatContentsVO> call, Response<ChatContentsVO> response) {
                 if (response.body() != null) {
-                    Chating chating = new Chating();
-                    chating.setChatContentsVO(response.body());
-                    for (UserInfos v : userList){
-                        if(v.getId().equals(response.body().getUid())){
-                            chating.setUserInfos(v);
-                        }
-                    }
-                    chatContentsList.add(chating);
-                    networkSuccessWork.work();
+                    networkSuccessWork.work(response.body());
                 }
             }
 

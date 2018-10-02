@@ -21,6 +21,7 @@ import com.service.taskdoc.R;
 import com.service.taskdoc.database.business.ChatRoomInfo;
 import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.business.transfer.UserInfos;
+import com.service.taskdoc.database.transfer.ChatContentsVO;
 import com.service.taskdoc.database.transfer.ChatRoomJoinVO;
 import com.service.taskdoc.database.transfer.ChatRoomVO;
 import com.service.taskdoc.database.transfer.ProjectVO;
@@ -32,6 +33,7 @@ import com.service.taskdoc.display.recycle.UsersCycle;
 import com.service.taskdoc.service.network.restful.service.ChatRoomJoinService;
 import com.service.taskdoc.service.network.restful.service.ChatRoomService;
 import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.StompBuilder;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -97,6 +99,9 @@ public class ChatRoom extends Fragment implements ChatRoomCycle.OnClickListener 
 
     @Override
     public void onClick(ChatRoomInfo chatRoomInfo) {
+
+        chatRoomInfo.setAlarm(0);
+
         Intent intent = new Intent(getContext(), ChatingActivity.class);
         intent.putExtra("userInfos", new Gson().toJson(((ProjectProgressActivity)getActivity()).userInfoList));
         intent.putExtra("projectVO", new Gson().toJson(((ProjectProgressActivity)getActivity()).project));
@@ -198,21 +203,26 @@ public class ChatRoom extends Fragment implements ChatRoomCycle.OnClickListener 
         chatRoomService.work(new NetworkSuccessWork() {
             @Override
             public void work(Object... objects) {
-                list.clear();
-
-                ChatRoomJoinVO chatRoomJoinVO = new ChatRoomJoinVO();
-                chatRoomJoinVO.setUid(UserInfo.getUid());
-                chatRoomJoinVO.setPcode(projectVO.getPcode());
-
-                chatRoomJoinService.roomList(chatRoomJoinVO);
-                chatRoomJoinService.work(new NetworkSuccessWork() {
-                    @Override
-                    public void work(Object... objects) {
-                        cycle.notifyDataSetChanged();
-                    }
-                });
+                ((ProjectProgressActivity) getActivity()).stompBuilder.sendMessage(
+                        StompBuilder.INSERT, StompBuilder.CHATROOM, new Gson().toJson(userList)
+                );
             }
         });
+    }
+
+
+    public void datachange(){
+        cycle.notifyDataSetChanged();
+    }
+
+    public void addAlarm(String object){
+        ChatContentsVO vo = new Gson().fromJson(object, ChatContentsVO.class);
+        for (ChatRoomInfo info : list){
+            if (info.getChatRoomVO().getCrcode() == vo.getCrcode()){
+                info.setAlarm(info.getAlarm()+1);
+            }
+        }
+        cycle.notifyDataSetChanged();
     }
 
 

@@ -46,10 +46,6 @@
             android:name=".display.activity.GanttChartActivity"
             android:theme="@style/AppTheme"></activity>
 
-        <service
-            android:name=".service.network.service.StompService"
-            android:enabled="false"
-            android:exported="false" />
     </application>
 
 </manifest>

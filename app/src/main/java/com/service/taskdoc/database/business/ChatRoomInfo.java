@@ -11,6 +11,8 @@ public class ChatRoomInfo {
     private List<UserInfoVO> userList;
     private ChatRoomVO chatRoomVO;
 
+    private int alarm;
+
     public List<UserInfoVO> getUserList() {
         return userList;
     }
@@ -25,5 +27,13 @@ public class ChatRoomInfo {
 
     public void setChatRoomVO(ChatRoomVO chatRoomVO) {
         this.chatRoomVO = chatRoomVO;
+    }
+
+    public int getAlarm() {
+        return alarm;
+    }
+
+    public void setAlarm(int alarm) {
+        this.alarm = alarm;
     }
 }

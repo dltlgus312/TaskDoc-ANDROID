@@ -3,20 +3,15 @@ package com.service.taskdoc.display.transitions.project;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
-import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -27,7 +22,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.applandeo.materialcalendarview.CalendarView;
 import com.applandeo.materialcalendarview.DatePicker;
@@ -36,14 +30,13 @@ import com.applandeo.materialcalendarview.listeners.OnSelectDateListener;
 import com.google.gson.Gson;
 import com.service.taskdoc.R;
 import com.service.taskdoc.database.business.Projects;
-import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.transfer.ProjectVO;
 import com.service.taskdoc.display.activity.ProjectProgressActivity;
 import com.service.taskdoc.display.recycle.ProjectCycle;
-import com.service.taskdoc.service.network.service.StompService;
 import com.service.taskdoc.service.system.support.NetworkSuccessWork;
 import com.service.taskdoc.service.network.restful.service.ProjectJoinService;
 import com.service.taskdoc.service.network.restful.service.ProjectService;
+import com.service.taskdoc.service.system.support.StompBuilder;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -72,6 +65,8 @@ public class Project extends Fragment implements ProjectCycle.Listener, NetworkS
     private ProjectCycle projectCycle;
     private com.service.taskdoc.database.business.transfer.Project ownerClickItemParam;
     private RecyclerView recyclerView;
+
+    private List<StompBuilder> stompBuilders;
 
     /* 네트워크 객체 */
     private ProjectJoinService projectJoinService;
@@ -116,6 +111,8 @@ public class Project extends Fragment implements ProjectCycle.Listener, NetworkS
         projectService.work(this);
         projectJoinService.work(this);
 
+        stompBuilders = new ArrayList<>();
+
         return view;
     }
 
@@ -140,6 +137,35 @@ public class Project extends Fragment implements ProjectCycle.Listener, NetworkS
         }
     }
 
+    @Override
+    public void onResume() {
+
+        for (StompBuilder t : stompBuilders)
+            t.disconnect();
+
+        stompBuilders.clear();
+
+        projectJoinService.selectProject();
+        super.onResume();
+    }
+
+    @Override
+    public void work(Object... objects) {
+        projectCycle.notifyDataSetChanged();
+
+        if(0 != projectCycle.getItemCount()){
+            banner.setVisibility(View.GONE);
+        }
+
+        if (stompBuilders.size() == 0){
+            for (com.service.taskdoc.database.business.transfer.Project p : Projects.getProjectInviteList()){
+                StompBuilder s = new StompBuilder(p.getPcode());
+                s.connect();
+                stompBuilders.add(s);
+            }
+        }
+    }
+
     /* CLICK EVENT */
     @Override
     public void setOnClick(com.service.taskdoc.database.business.transfer.Project project, View view) {
@@ -152,6 +178,12 @@ public class Project extends Fragment implements ProjectCycle.Listener, NetworkS
                         public void onClick(DialogInterface dialog, int which) {
                             project.setPinvite(1);
                             projectJoinService.update(project);
+
+                            for (StompBuilder s : stompBuilders){
+                                if (project.getPcode() == s.getPcode()){
+                                    s.sendMessage(StompBuilder.UPDATE, StompBuilder.PROJECTJOIN, "");
+                                }
+                            }
                         }
                     });
             builder.setNegativeButton(DIALOG_NO,
@@ -262,49 +294,10 @@ public class Project extends Fragment implements ProjectCycle.Listener, NetworkS
         builder.show();
     }
 
-    @Override
-    public void work(Object... objects) {
-        projectCycle.notifyDataSetChanged();
-
-        if(0 != projectCycle.getItemCount()){
-            banner.setVisibility(View.GONE);
-        }
-    }
-
-    @Override
-    public void onResume() {
-        projectJoinService.selectProject();
-        super.onResume();
-    }
-
     public void projectConnect(com.service.taskdoc.database.business.transfer.Project project) {
         Intent intent = new Intent(getContext(), ProjectProgressActivity.class);
         intent.putExtra("project", new Gson().toJson(project));
         getContext().startActivity(intent);
-    }
-
-    public class ProjectLoad extends AsyncTask<String, Integer, Void> {
-
-        ProgressDialog asyncDialog = new ProgressDialog(getContext(), R.style.DialogTheme);
-
-        @Override
-        protected Void doInBackground(String... strings) {
-            return null;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            asyncDialog.setCancelable(false);
-            asyncDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            asyncDialog.show();
-            super.onPreExecute();
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            asyncDialog.dismiss();
-            super.onPostExecute(aVoid);
-        }
     }
 
     public void datePicker(Button sDate, Button eDate, TextView banner){
@@ -336,4 +329,27 @@ public class Project extends Fragment implements ProjectCycle.Listener, NetworkS
         datePicker.show();
     }
 
+    public class ProjectLoad extends AsyncTask<String, Integer, Void> {
+
+        ProgressDialog asyncDialog = new ProgressDialog(getContext(), R.style.DialogTheme);
+
+        @Override
+        protected Void doInBackground(String... strings) {
+            return null;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            asyncDialog.setCancelable(false);
+            asyncDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            asyncDialog.show();
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            asyncDialog.dismiss();
+            super.onPostExecute(aVoid);
+        }
+    }
 }

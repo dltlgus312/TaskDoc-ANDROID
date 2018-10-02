@@ -12,6 +12,7 @@ import com.service.taskdoc.R;
 import com.service.taskdoc.database.business.ChatRoomInfo;
 import com.service.taskdoc.database.business.Tasks;
 import com.service.taskdoc.database.business.transfer.UserInfos;
+import com.service.taskdoc.database.transfer.ChatContentsVO;
 import com.service.taskdoc.database.transfer.DocumentVO;
 import com.service.taskdoc.display.transitions.chatroom.ChatRoom;
 import com.service.taskdoc.display.transitions.project.MyInfo;
@@ -81,6 +82,16 @@ public class Tab1 extends Fragment implements TabLayout.OnTabSelectedListener {
     public void onTabReselected(TabLayout.Tab tab) {
 
     }
+
+
+    public void chatRoomViewRefresh(){
+        chatRoomView.datachange();
+    }
+
+    public void addChatContentsAlarm(String object){
+        chatRoomView.addAlarm(object);
+    }
+
 
     public List<ChatRoomInfo> getChatRoomInfosList() {
         return chatRoomInfosList;

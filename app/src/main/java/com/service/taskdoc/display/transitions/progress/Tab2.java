@@ -167,6 +167,8 @@ public class Tab2 extends Fragment implements NoticeCycle.OnClickListener {
                             if (cycle.getItemCount() != 0) {
                                 banner.setVisibility(View.GONE);
                             }
+
+
                         }
                     });
                 }

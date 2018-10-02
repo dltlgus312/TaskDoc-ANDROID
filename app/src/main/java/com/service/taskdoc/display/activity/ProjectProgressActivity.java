@@ -32,7 +32,9 @@ import com.service.taskdoc.database.business.Tasks;
 import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.business.transfer.Project;
 import com.service.taskdoc.database.business.transfer.UserInfos;
+import com.service.taskdoc.database.transfer.ChatContentsVO;
 import com.service.taskdoc.database.transfer.ChatRoomJoinVO;
+import com.service.taskdoc.database.transfer.ChatRoomVO;
 import com.service.taskdoc.database.transfer.DocumentVO;
 import com.service.taskdoc.database.transfer.NoticeVO;
 import com.service.taskdoc.database.transfer.ProjectJoinVO;
@@ -40,6 +42,7 @@ import com.service.taskdoc.database.transfer.PublicTaskVO;
 import com.service.taskdoc.database.transfer.UserInfoVO;
 import com.service.taskdoc.display.custom.ganttchart.Line;
 import com.service.taskdoc.display.recycle.DocumentCycle;
+import com.service.taskdoc.display.transitions.chatroom.ChatRoom;
 import com.service.taskdoc.display.transitions.progress.Tab1;
 import com.service.taskdoc.display.transitions.progress.Tab2;
 import com.service.taskdoc.display.transitions.progress.Tab3;
@@ -53,20 +56,29 @@ import com.service.taskdoc.service.network.restful.service.UserInfoService;
 import com.service.taskdoc.service.system.support.KeyboardManager;
 import com.service.taskdoc.service.system.support.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.OnBackPressedListener;
+import com.service.taskdoc.service.system.support.StompBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ProjectProgressActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, StompBuilder.SubscribeListener {
 
-    private OnBackPressedListener onBackPressedListener;
+
+    public Project project;
+
 
     private Tab1 tab1 = new Tab1();
     private Tab2 tab2 = new Tab2();
     private Tab3 tab3 = new Tab3();
 
-    public Project project;
+
+    public List<DocumentVO> documentList = new ArrayList<>();
+    public List<ChatRoomInfo> chatRoomInfoList = new ArrayList<>();
+    public List<NoticeVO> noticeList = new ArrayList<>();
+    public List<UserInfos> userInfoList = new ArrayList<>();
+    public Tasks tasks = new Tasks();
+
 
     public NoticeService noticeService;
     public ProjectJoinService projectJoinService;
@@ -76,11 +88,11 @@ public class ProjectProgressActivity extends AppCompatActivity
     public DocumentService documentService;
     public UserInfoService userInfoService;
 
-    public List<DocumentVO> documentList = new ArrayList<>();
-    public List<ChatRoomInfo> chatRoomInfoList = new ArrayList<>();
-    public List<NoticeVO> noticeList = new ArrayList<>();
-    public List<UserInfos> userInfoList = new ArrayList<>();
-    public Tasks tasks = new Tasks();
+    public StompBuilder stompBuilder;
+
+
+    private OnBackPressedListener onBackPressedListener;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,82 +124,17 @@ public class ProjectProgressActivity extends AppCompatActivity
         tab1.setTasks(tasks);
         tab2.setNoticeVOList(noticeList);
         tab3.setUserInfosList(userInfoList);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        documentList.clear();
-        chatRoomInfoList.clear();
-        noticeList.clear();
-        userInfoList.clear();
-        tasks.getPublicTasks().clear();
-        tasks.getPrivateTasks().clear();
 
         networkService();
-    }
 
-    @Override
-    public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-
-        if (this.onBackPressedListener != null) {
-            this.onBackPressedListener.onBack();
-        } else if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        if (project.getPpermission().equals(Projects.OWNER)) {
-            getMenuInflater().inflate(R.menu.project_progress, menu);
-            return true;
-        } else return false;
-    }
-
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.collabor) findUser();
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-
-        if (id == R.id.progress) {
-            getSupportFragmentManager().beginTransaction().replace(
-                    R.id.fragment, tab1).disallowAddToBackStack().commit();
-        } else if (id == R.id.notice) {
-            getSupportFragmentManager().beginTransaction().replace(
-                    R.id.fragment, tab2).disallowAddToBackStack().commit();
-        } else if (id == R.id.collabor) {
-            getSupportFragmentManager().beginTransaction().replace(
-                    R.id.fragment, tab3).disallowAddToBackStack().commit();
-        } else if (id == R.id.manage) {
-
-        } else if (id == R.id.out) {
-            finish();
-        }
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
     }
 
     public void networkService() {
+
+        stompBuilder = new StompBuilder(project.getPcode());
+        stompBuilder.setSubscribeListener(this);
+        stompBuilder.connect();
+
         userInfoService = new UserInfoService();
 
         ChatRoomJoinVO chatRoomJoinVO = new ChatRoomJoinVO();
@@ -202,38 +149,73 @@ public class ProjectProgressActivity extends AppCompatActivity
             public void work(Object... objects) {
                 getSupportFragmentManager().beginTransaction().replace(
                         R.id.fragment, tab1).disallowAddToBackStack().commit();
+
                 documentService = new DocumentService(chatRoomInfoList.get(0).getChatRoomVO().getCrcode());
                 documentService.setDocumentList(documentList);
-                documentService.roomList();
-                documentService.work(new NetworkSuccessWork() {
-                    @Override
-                    public void work(Object... objects) {
-                    }
-                });
-            }
-        });
-
-        publicService = new PublicTaskService();
-        publicService.setTasks(tasks);
-        publicService.listAll(project.getPcode());
-        publicService.work(new NetworkSuccessWork() {
-            @Override
-            public void work(Object... objects) {
+                refreshDocument();
             }
         });
 
         noticeService = new NoticeService(project.getPcode());
         noticeService.setNoticeList(noticeList);
+        refreshNotice();
+
+        publicService = new PublicTaskService();
+        publicService.setTasks(tasks);
+        refreshTask();
+
+        projectJoinService = new ProjectJoinService();
+        projectJoinService.setUserInfosList(userInfoList);
+        refreshProjectJoin();
+    }
+
+
+
+    /*
+    * Refresh
+    * */
+    public void refreshChatRoom(){
+        chatRoomInfoList.clear();
+
+        ChatRoomJoinVO chatRoomJoinVO = new ChatRoomJoinVO();
+        chatRoomJoinVO.setUid(UserInfo.getUid());
+        chatRoomJoinVO.setPcode(project.getPcode());
+
+        chatRoomJoinService.roomList(chatRoomJoinVO);
+        chatRoomJoinService.work(new NetworkSuccessWork() {
+            @Override
+            public void work(Object... objects) {
+                tab1.chatRoomViewRefresh();
+            }
+        });
+    }
+
+    public void refreshNotice(){
+        noticeList.clear();
+
         noticeService.list();
         noticeService.work(new NetworkSuccessWork() {
             @Override
             public void work(Object... objects) {
             }
         });
+    }
 
+    public void refreshTask(){
+        tasks.getPrivateTasks().clear();
+        tasks.getPublicTasks().clear();
 
-        projectJoinService = new ProjectJoinService();
-        projectJoinService.setUserInfosList(userInfoList);
+        publicService.listAll(project.getPcode());
+        publicService.work(new NetworkSuccessWork() {
+            @Override
+            public void work(Object... objects) {
+            }
+        });
+    }
+
+    public void refreshProjectJoin(){
+        userInfoList.clear();
+
         projectJoinService.selectProjectJoinUsers(project.getPcode());
         projectJoinService.work(new NetworkSuccessWork() {
             @Override
@@ -243,10 +225,22 @@ public class ProjectProgressActivity extends AppCompatActivity
         });
     }
 
-    public void setOnBackPressedListener(OnBackPressedListener onBackPressedListener) {
-        this.onBackPressedListener = onBackPressedListener;
+    public void refreshDocument(){
+        documentList.clear();
+
+        documentService.roomList();
+        documentService.work(new NetworkSuccessWork() {
+            @Override
+            public void work(Object... objects) {
+            }
+        });
     }
 
+
+
+    /*
+    * Colaboration
+    * */
     public void findUser() {
         EditText input = new EditText(this);
         input.setSingleLine();
@@ -358,5 +352,122 @@ public class ProjectProgressActivity extends AppCompatActivity
         }
 
         return true;
+    }
+
+
+
+    /*
+    * BackPress Event
+    * */
+    @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+
+        if (this.onBackPressedListener != null) {
+            this.onBackPressedListener.onBack();
+        } else if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            stompBuilder.disconnect();
+            super.onBackPressed();
+        }
+    }
+
+    public void setOnBackPressedListener(OnBackPressedListener onBackPressedListener) {
+        this.onBackPressedListener = onBackPressedListener;
+    }
+
+
+
+    /*
+    * Menu Item
+    * */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        if (project.getPpermission().equals(Projects.OWNER)) {
+            getMenuInflater().inflate(R.menu.project_progress, menu);
+            return true;
+        } else return false;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.collabor) findUser();
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+        // Handle navigation view item clicks here.
+        int id = item.getItemId();
+
+        if (id == R.id.progress) {
+            getSupportFragmentManager().beginTransaction().replace(
+                    R.id.fragment, tab1).disallowAddToBackStack().commit();
+        } else if (id == R.id.notice) {
+            getSupportFragmentManager().beginTransaction().replace(
+                    R.id.fragment, tab2).disallowAddToBackStack().commit();
+        } else if (id == R.id.collabor) {
+            getSupportFragmentManager().beginTransaction().replace(
+                    R.id.fragment, tab3).disallowAddToBackStack().commit();
+        } else if (id == R.id.manage) {
+
+        } else if (id == R.id.out) {
+            finish();
+        }
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
+
+
+    /*
+    * Stomp Listener
+    * */
+    @Override
+    public void topic(String msg, String type, String object) {
+        // 채팅, 업무, 자료, 공지, 구성원(참여확인누를시)
+
+        switch (msg){
+            case StompBuilder.INSERT :
+                switch (type){
+                    case StompBuilder.CHATROOM :
+                        refreshChatRoom();
+                        break;
+                    case StompBuilder.PROJECTJOIN :
+                        break;
+                    case StompBuilder.CHATCONTENTS :
+                        tab1.addChatContentsAlarm(object);
+                        break;
+                }
+                break;
+
+
+            case StompBuilder.UPDATE :
+                switch (type){
+                    case StompBuilder.PROJECTJOIN :
+                        refreshChatRoom();
+                        refreshProjectJoin();
+                        break;
+                }
+                break;
+
+
+            case StompBuilder.DELETE :
+                switch (type){
+                    case StompBuilder.PROJECTJOIN :
+                        refreshProjectJoin();
+                        break;
+                }
+                break;
+        }
     }
 }

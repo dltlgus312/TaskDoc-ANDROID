@@ -46,13 +46,14 @@ import com.service.taskdoc.service.system.support.ConvertDpPixels;
 import com.service.taskdoc.service.system.support.DownActionView;
 import com.service.taskdoc.service.system.support.KeyboardManager;
 import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.StompBuilder;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class ChatingActivity extends AppCompatActivity implements NetworkSuccessWork, TextWatcher {
+public class ChatingActivity extends AppCompatActivity implements NetworkSuccessWork, TextWatcher, StompBuilder.SubscribeListener {
 
     private ProjectVO projectVO;
     private ChatRoomVO chatRoomVO;
@@ -93,6 +94,8 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
     private ChatRoomService focusService;
     private DecisionService decisionService;
     private ChatContentsService chatContentsService;
+
+    private StompBuilder stompBuilder;
 
 
     @Override
@@ -173,12 +176,8 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ChatContentsVO vo = new ChatContentsVO();
-                vo.setCrcode(chatRoomVO.getCrcode());
-                vo.setCcontents(input.getText().toString());
-                vo.setUid(UserInfo.getUid());
-                chatContentsService.insert(vo);
-                input.setText("");
+                String msg = input.getText().toString();
+                sendMessage(msg);
             }
         });
         searchButton.setOnClickListener(new View.OnClickListener() {
@@ -204,6 +203,10 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
     }
 
     public void connetionNetwork() {
+        stompBuilder = new StompBuilder(projectVO.getPcode());
+        stompBuilder.connect();
+        stompBuilder.setSubscribeListener(this);
+
         int crcode = chatRoomVO.getCrcode();
 
         ChatRoomJoinVO vo = new ChatRoomJoinVO();
@@ -228,7 +231,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
 
         chatContentsService = new ChatContentsService(crcode);
         chatContentsService.setChatContentsList(chatContentsList);
-        chatContentsService.setUserList(userList);
+        chatContentsService.setUserList(userInfoList);
         chatContentsService.list();
         chatContentsService.work(this);
 
@@ -254,6 +257,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
+            stompBuilder.disconnect();
             finish();
         }
     }
@@ -371,10 +375,8 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         vo.setCrcode(chatRoomVO.getCrcode());
         vo.setUid(userInfos.getId());
 
-        chatRoomJoinService.insert(vo, userInfos);
-        chatRoomJoinService.work(this);
-        Toast.makeText(this, "\"" + vo.getUid() +"\""+ " 님을 추가 하셨습니다.", Toast.LENGTH_SHORT).show();
-
+        chatRoomJoinService.insert(vo);
+        stompBuilder.sendMessage(StompBuilder.INSERT, StompBuilder.CHATROOMJOIN, vo);
     }
 
     public void goToPosition(){
@@ -432,9 +434,69 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
     * NetWork Access
     * */
 
+    public void sendMessage(String msg){
+        ChatContentsVO vo = new ChatContentsVO();
+        vo.setCrcode(chatRoomVO.getCrcode());
+        vo.setCcontents(msg);
+        vo.setUid(UserInfo.getUid());
+
+        chatContentsService.insert(vo);
+        input.setText("");
+    }
+
     @Override
     public void work(Object... objects) {
+        if (objects!=null && objects.length>0) {
+            stompBuilder.sendMessage(StompBuilder.INSERT, StompBuilder.CHATCONTENTS, objects[0]);
+            return;
+        }
+
         refresh();
     }
 
+    @Override
+    public void topic(String msg, String type, String object) {
+        switch (msg){
+            case StompBuilder.INSERT :
+                switch (type){
+                    case StompBuilder.CHATCONTENTS :
+                        ChatContentsVO contentsVo = new Gson().fromJson(object, ChatContentsVO.class);
+                        Chating c = new Chating();
+                        c.setChatContentsVO(contentsVo);
+                        for (UserInfos u : userInfoList) {
+                            if (contentsVo.getUid().equals(u.getId())) {
+                                c.setUserInfos(u);
+                            }
+                        }
+                        chatContentsList.add(c);
+                        refresh();
+                        break;
+
+                    case StompBuilder.CHATROOMJOIN :
+                        ChatRoomJoinVO joinVo = new Gson().fromJson(object, ChatRoomJoinVO.class);
+                        userList.clear();
+
+                        ChatRoomJoinVO vo = new ChatRoomJoinVO();
+                        vo.setPcode(projectVO.getPcode());
+                        vo.setCrcode(chatRoomVO.getCrcode());
+
+                        chatRoomJoinService.userList(vo);
+                        Toast.makeText(this, "\"" + joinVo.getUid() +"\""+ " 님을 추가 하셨습니다.", Toast.LENGTH_SHORT).show();
+                        break;
+                }
+                break;
+
+
+            case StompBuilder.UPDATE :
+                switch (type){
+                }
+                break;
+
+
+            case StompBuilder.DELETE :
+                switch (type){
+                }
+                break;
+        }
+    }
 }

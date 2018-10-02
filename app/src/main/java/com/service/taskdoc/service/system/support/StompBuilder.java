@@ -22,11 +22,42 @@ import ua.naiksoftware.stomp.client.StompClient;
 
 public class StompBuilder{
 
+    public final static String INSERT = "insert";
+    public final static String UPDATE = "update";
+    public final static String DELETE = "delete";
+
+    public final static String CHATCONTENTS = "chatcontentsvo";
+    public final static String CHATROOMJOIN = "chatroomjoinvo";
+    public final static String CHATROOM = "chatroomvo";
+    public final static String DECISIONITEM = "decisionitemvo";
+    public final static String DECISION = "decisionvo";
+    public final static String DOCUMENT = "documentvo";
+    public final static String FEEDBACK = "feedbackvo";
+    public final static String FILE = "filevo";
+    public final static String MEMO = "memovo";
+    public final static String METHODBOARD = "methodboardvo";
+    public final static String METHODITEM = "methoditemvo";
+    public final static String METHODLIST = "methodlistvo";
+    public final static String METHOD = "methodvo";
+    public final static String NOTICE = "noticevo";
+    public final static String PRIVATETASK = "privatetaskvo";
+    public final static String PUBLICTASK = "publictaskvo";
+    public final static String USERINFO = "userinfovo";
+    public final static String VOTER = "votervo";
+    public final static String PROJECT = "projectvo";
+    public final static String PROJECTJOIN = "projectjoinvo";
+
     private StompClient mStompClient;
+
+    private SubscribeListener subscribeListener;
 
     private int pcode;
 
-    public StompBuilder(int pcode, SubscribeListener subscribeListener){
+    private final String MESSAGE = "message";
+    private final String TYPE = "type";
+    private final String OBJECT = "object";
+
+    public StompBuilder(int pcode){
 
         this.pcode = pcode;
         mStompClient = Stomp.over(Stomp.ConnectionProvider.JWS, "ws://" + RequestBuilder.URI + "/goStomp/websocket");
@@ -50,22 +81,25 @@ public class StompBuilder{
                 .subscribe(topicMessage -> {
                     Map<String, Object> map = new Gson().fromJson(topicMessage.getPayload(), Map.class);
 
-                    String message = (String) map.get("message");
-                    String type = (String) map.get("type");
-                    String object = new Gson().toJson(map.get("object"));
-                    subscribeListener.topic(pcode, message, type, object);
+                    String message = (String) map.get(MESSAGE);
+                    String type = (String) map.get(TYPE);
+                    String object = new Gson().toJson(map.get(OBJECT));
+                    if (subscribeListener != null ) subscribeListener.topic(message, type, object);
 
                     Log.d("TEST", topicMessage.getPayload());
                 });
 
+    }
+
+    public void connect(){
         mStompClient.connect();
     }
 
-    public <T> void sendMessage(String msg, String type, T t){
+    public void sendMessage(String msg, String type, Object object){
         Map<String, Object> map = new HashMap<>();
-        map.put("message", msg);
-        map.put("type", type);
-        map.put("object", t);
+        map.put(MESSAGE, msg);
+        map.put(TYPE, type);
+        map.put(OBJECT, object);
         String serialize = new Gson().toJson(map);
         mStompClient.send("/app/project/"+pcode, serialize)
                 .compose(applySchedulers())
@@ -80,6 +114,7 @@ public class StompBuilder{
         mStompClient.disconnect();
     }
 
+
     protected CompletableTransformer applySchedulers() {
         return upstream -> upstream
                 .unsubscribeOn(Schedulers.newThread())
@@ -87,7 +122,23 @@ public class StompBuilder{
                 .observeOn(AndroidSchedulers.mainThread());
     }
 
+    public SubscribeListener getSubscribeListener() {
+        return subscribeListener;
+    }
+
+    public void setSubscribeListener(SubscribeListener subscribeListener) {
+        this.subscribeListener = subscribeListener;
+    }
+
+    public int getPcode() {
+        return pcode;
+    }
+
+    public void setPcode(int pcode) {
+        this.pcode = pcode;
+    }
+
     public interface SubscribeListener{
-        void topic(int pcode, String msg, String type, String json);
+        void topic(String msg, String type, String bject);
     }
 }
