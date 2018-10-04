@@ -101,12 +101,22 @@ public class ChatRoom extends Fragment implements ChatRoomCycle.OnClickListener 
     public void onClick(ChatRoomInfo chatRoomInfo) {
 
         chatRoomInfo.setAlarm(0);
+        chatRoomInfo.setAlarm(false);
+        cycle.notifyDataSetChanged();
 
         Intent intent = new Intent(getContext(), ChatingActivity.class);
         intent.putExtra("userInfos", new Gson().toJson(((ProjectProgressActivity)getActivity()).userInfoList));
         intent.putExtra("projectVO", new Gson().toJson(((ProjectProgressActivity)getActivity()).project));
         intent.putExtra("chatRoomVO", new Gson().toJson(chatRoomInfo.getChatRoomVO()));
         startActivity(intent);
+    }
+
+    @Override
+    public void onResume() {
+        for (ChatRoomInfo info : list){
+            info.setAlarm(true);
+        }
+        super.onResume();
     }
 
     @Override

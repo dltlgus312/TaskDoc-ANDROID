@@ -165,6 +165,25 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
             }
         });
 
+        file.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                addDoc();
+            }
+        });
+        focus.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                addFoc();
+            }
+        });
+        decision.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                addDec();
+            }
+        });
+
         getSupportFragmentManager().beginTransaction().replace(R.id.nav_view, navView).addToBackStack(null).commit();
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -192,7 +211,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         navView.setDecisionList(decisionList);
         navView.setFocusList(focusList);
 
-        cycle = new ChatingCycle(chatContentsList);
+        cycle = new ChatingCycle(chatContentsList, documentList, decisionList, focusList);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(cycle);
@@ -226,6 +245,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
                         }
                     }
                 }
+                refresh();
             }
         });
 
@@ -397,6 +417,8 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
     }
 
 
+
+
     /*
     * Search Contents
     * */
@@ -430,6 +452,27 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
     }
 
 
+
+
+    /*
+    * Add Document
+    * */
+
+    public void addDoc(){
+
+    }
+
+    public void addDec(){
+
+    }
+
+    public void addFoc(){
+
+    }
+
+
+
+
     /*
     * NetWork Access
     * */
@@ -446,6 +489,8 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
 
     @Override
     public void work(Object... objects) {
+
+        // ChatContentService 에서 보낸 이벤트
         if (objects!=null && objects.length>0) {
             stompBuilder.sendMessage(StompBuilder.INSERT, StompBuilder.CHATCONTENTS, objects[0]);
             return;
@@ -454,6 +499,12 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         refresh();
     }
 
+
+
+
+    /*
+    * Stomp Subscribe
+    * */
     @Override
     public void topic(String msg, String type, String object) {
         switch (msg){

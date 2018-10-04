@@ -13,7 +13,9 @@ public class ChatRoomInfo {
 
     private int alarm;
 
-    public List<UserInfoVO> getUserList() {
+    private boolean isAlarm = true;
+
+   public List<UserInfoVO> getUserList() {
         return userList;
     }
 
@@ -34,6 +36,15 @@ public class ChatRoomInfo {
     }
 
     public void setAlarm(int alarm) {
-        this.alarm = alarm;
+       if (isAlarm)
+           this.alarm = alarm;
+    }
+
+    public boolean isAlarm() {
+        return isAlarm;
+    }
+
+    public void setAlarm(boolean alarm) {
+        isAlarm = alarm;
     }
 }

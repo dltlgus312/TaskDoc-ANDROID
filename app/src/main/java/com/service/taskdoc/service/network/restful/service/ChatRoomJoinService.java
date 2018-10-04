@@ -151,7 +151,7 @@ public class ChatRoomJoinService {
             @Override
             public void onResponse(Call<Integer> call, Response<Integer> response) {
                 if (response.body() != null && response.body() != -1) {
-                    networkSuccessWork.work();
+                    networkSuccessWork.work("insert");
                 }
             }
 
