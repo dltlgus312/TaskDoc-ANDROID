@@ -1,6 +1,7 @@
 package com.service.taskdoc.display.activity;
 
 import android.content.DialogInterface;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.CardView;
@@ -21,6 +22,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
@@ -40,7 +42,9 @@ import com.service.taskdoc.database.transfer.ProjectVO;
 import com.service.taskdoc.display.custom.custom.dialog.DialogDocParam;
 import com.service.taskdoc.display.custom.custom.dialog.DialogFilePicker;
 import com.service.taskdoc.display.custom.custom.dialog.DialogTaskPicker;
-import com.service.taskdoc.display.custom.ganttchart.GanttChart;
+import com.service.taskdoc.display.custom.custom.dialog.FileDownLoadServiceDialog;
+import com.service.taskdoc.display.custom.custom.dialog.FileUpLoadServiceDialog;
+import com.service.taskdoc.display.custom.ganttchart.Line;
 import com.service.taskdoc.display.recycle.ChatingCycle;
 import com.service.taskdoc.display.recycle.FileCycle;
 import com.service.taskdoc.display.recycle.UsersCycle;
@@ -51,15 +55,17 @@ import com.service.taskdoc.service.network.restful.service.ChatRoomService;
 import com.service.taskdoc.service.network.restful.service.DecisionService;
 import com.service.taskdoc.service.network.restful.service.DocumentService;
 import com.service.taskdoc.service.network.restful.service.FileService;
-import com.service.taskdoc.service.system.support.ConvertDpPixels;
-import com.service.taskdoc.service.system.support.DownActionView;
-import com.service.taskdoc.service.system.support.KeyboardManager;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.FileUpLoadDialogListener;
+import com.service.taskdoc.service.system.support.service.ConvertDpPixels;
+import com.service.taskdoc.service.system.support.service.DownActionView;
+import com.service.taskdoc.service.system.support.service.KeyboardManager;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.StompBuilder;
 
 import java.io.File;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 
@@ -481,100 +487,32 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
      * */
 
     public void addDoc() {
-        fileFicker();
-    }
-
-    public void fileFicker() {
-        dialog = new DialogFilePicker(this);
-        dialog.setOnPositiveClick(new DialogFilePicker.OnPositiveClick() {
+        FileUpLoadDialogListener listener = new FileUpLoadDialogListener() {
             @Override
-            public void selectFilePath(List<FileCycle.Item> items) {
-                // 오류 처리
-                if (items.size() == 0) {
-                    Toast.makeText(ChatingActivity.this, "선택된 파일이 없습니다.", Toast.LENGTH_SHORT).show();
-                    return;
-                } else if (items.size() > 4) {
-                    Toast.makeText(ChatingActivity.this, "파일은 최대 4개 까지 선택 가능합니다.", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                docParameter(items);
+            public void formatDate(List<MultipartBody.Part> multiPartList, DocumentVO vo) {
+                documentService.upload(multiPartList, vo);
+                documentService.setFileLoadService(new DocumentService.FileLoadService() {
+                    @Override
+                    public void success(DocumentVO vo) {
+                        Toast.makeText(ChatingActivity.this,
+                                "파일을 업로드 하였습니다.", Toast.LENGTH_SHORT).show();
+                        stompBuilder.sendMessage(StompBuilder.INSERT, StompBuilder.DOCUMENT, vo);
+                    }
+
+                    @Override
+                    public void fail(String msg) {
+                        Toast.makeText(ChatingActivity.this,
+                                "파일을 업로드 하는데 실패 하였습니다.\n실패사유:" + msg, Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
-        });
-        dialog.show();
-    }
+        };
 
-    public void docParameter(List<FileCycle.Item> items) {
-        // DOCUMENT 파라미터 셋팅
-        DialogDocParam uploadDialog = new DialogDocParam(ChatingActivity.this, items);
-        uploadDialog.setOnPositiveClick(new DialogDocParam.OnPositiveClick() {
-            @Override
-            public void getImformation(String title, String contents) {
-                if (title.length() == 0) {
-                    Toast.makeText(ChatingActivity.this, "이름이 너무 짧습니다.", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if (chatRoomVO.getCrmode() == 1) {
-                    // 메인톡방에선 업무를 선택
-                    taskFicker(items, title, contents);
-                } else {
-                    // 서브, 회의모드에선 즉시 업로드
-                    uploadFile(null, items, title, contents);
-                }
-            }
-        });
-        uploadDialog.show();
-    }
-
-    public void taskFicker(List<FileCycle.Item> items, String title, String contents) {
-        DialogTaskPicker dialogTaskPicker = new DialogTaskPicker(ChatingActivity.this, projectVO.getPcode());
-        dialogTaskPicker.setOnPositiveClick(new DialogTaskPicker.OnPositiveClick() {
-            @Override
-            public void getTask(Task task) {
-                if (task == null) {
-                    Toast.makeText(ChatingActivity.this, "선택된 업무가 없습니다.", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                uploadFile(task, items, title, contents);
-            }
-        });
-        dialogTaskPicker.show();
-    }
-
-    public void uploadFile(Task task, List<FileCycle.Item> items, String title, String contents) {
-        DocumentVO vo = new DocumentVO();
-        vo.setCrcode(this.chatRoomVO.getCrcode());
-        if (task != null) {
-            vo.setTcode(task.getCode());
-        }
-        vo.setUid(UserInfo.getUid());
-        vo.setDmtitle(title);
-        vo.setDmcontents(contents);
-
-        List<MultipartBody.Part> multiPartList = new ArrayList<>();
-        for (FileCycle.Item item : items) {
-            File file = new File(item.getPath() + "/" + item.getName());
-
-            RequestBody requestFile =
-                    RequestBody.create(MediaType.parse("multipart/form-data"), file);
-
-            MultipartBody.Part body =
-                    MultipartBody.Part.createFormData("file", item.getName(), requestFile);
-
-            multiPartList.add(body);
-        }
-        documentService.upload(multiPartList, vo);
-        documentService.setFileLoadService(new DocumentService.FileLoadService() {
-            @Override
-            public void success() {
-                Toast.makeText(ChatingActivity.this, "파일을 업로드 하였습니다.", Toast.LENGTH_SHORT).show();
-                stompBuilder.sendMessage(StompBuilder.INSERT, StompBuilder.DOCUMENT, vo);
-            }
-
-            @Override
-            public void fail(String msg) {
-                Toast.makeText(ChatingActivity.this, "파일을 업로드 하는데 실패 하였습니다.\n실패사유:" + msg, Toast.LENGTH_SHORT).show();
-            }
-        });
+        new FileUpLoadServiceDialog(this)
+                .setPcode(projectVO.getPcode())
+                .setCrcode(chatRoomVO.getCrcode())
+                .setFileUpLoadDialogListener(listener)
+                .docUploadProcess();
     }
 
     public void addDec() {
@@ -588,17 +526,13 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
 
 
 
-
-
-
     /*
      * Click Contents
      * */
 
     @Override
     public void onDocClick(View view, DocumentVO vo) {
-        DialogDocParam dialogDocParam = new DialogDocParam(ChatingActivity.this, vo);
-        android.app.AlertDialog d = dialogDocParam.show();
+        new FileDownLoadServiceDialog(ChatingActivity.this, vo);
     }
 
     @Override
@@ -610,8 +544,6 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
     public void onDecClick(View view, DecisionVO vo) {
 
     }
-
-
 
 
 
@@ -643,6 +575,8 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
     }
 
 
+
+
     /*
      * Stomp Subscribe
      * */
@@ -650,60 +584,64 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
     public void topic(String msg, String type, String object) {
         switch (msg) {
             case StompBuilder.INSERT:
-                switch (type) {
-                    case StompBuilder.CHATCONTENTS:
-                        ChatContentsVO contentsVo = new Gson().fromJson(object, ChatContentsVO.class);
-                        Chating c = new Chating();
-                        c.setChatContentsVO(contentsVo);
-                        for (UserInfos u : userInfoList) {
-                            if (contentsVo.getUid().equals(u.getId())) {
-                                c.setUserInfos(u);
-                            }
-                        }
-                        chatContentsList.add(c);
-                        refresh();
-                        break;
-
-                    case StompBuilder.CHATROOMJOIN:
-                        ChatRoomJoinVO joinVo = new Gson().fromJson(object, ChatRoomJoinVO.class);
-                        userList.clear();
-
-                        ChatRoomJoinVO vo = new ChatRoomJoinVO();
-                        vo.setPcode(projectVO.getPcode());
-                        vo.setCrcode(chatRoomVO.getCrcode());
-
-                        chatRoomJoinService.userList(vo);
-                        Toast.makeText(this, "\"" + joinVo.getUid() + "\"" + " 님을 추가 하셨습니다.", Toast.LENGTH_SHORT).show();
-                        break;
-                    case StompBuilder.DOCUMENT:
-                        DocumentVO docVo = new Gson().fromJson(object, DocumentVO.class);
-                        documentList.add(docVo);
-
-                        // 파일 업로드 후에 채팅 전송
-                        if (docVo.getUid().equals(UserInfo.getUid())) {
-                            ChatContentsVO chatContentsVO = new ChatContentsVO();
-                            chatContentsVO.setCrcode(chatRoomVO.getCrcode());
-                            chatContentsVO.setDmcode(docVo.getDmcode());
-                            chatContentsVO.setUid(UserInfo.getUid());
-                            chatContentsService.insert(chatContentsVO);
-                        }
-
-                        refresh();
-                        break;
-                }
+                insertTopic(type, object);
                 break;
-
-
             case StompBuilder.UPDATE:
-                switch (type) {
-                }
+                updateTopic(type, object);
                 break;
-
-
             case StompBuilder.DELETE:
-                switch (type) {
-                }
+                deleteTopic(type, object);
                 break;
         }
+    }
+
+    private void insertTopic(String type, String object){
+        switch (type) {
+            case StompBuilder.CHATCONTENTS:
+                ChatContentsVO contentsVo = new Gson().fromJson(object, ChatContentsVO.class);
+                Chating c = new Chating();
+                c.setChatContentsVO(contentsVo);
+                for (UserInfos u : userInfoList) {
+                    if (contentsVo.getUid().equals(u.getId())) {
+                        c.setUserInfos(u);
+                    }
+                }
+                chatContentsList.add(c);
+                refresh();
+                break;
+            case StompBuilder.CHATROOMJOIN:
+                ChatRoomJoinVO joinVo = new Gson().fromJson(object, ChatRoomJoinVO.class);
+                userList.clear();
+
+                ChatRoomJoinVO vo = new ChatRoomJoinVO();
+                vo.setPcode(projectVO.getPcode());
+                vo.setCrcode(chatRoomVO.getCrcode());
+
+                chatRoomJoinService.userList(vo);
+                Toast.makeText(this, "\"" + joinVo.getUid() + "\"" + " 님을 추가 하셨습니다.", Toast.LENGTH_SHORT).show();
+                break;
+            case StompBuilder.DOCUMENT:
+                DocumentVO docVo = new Gson().fromJson(object, DocumentVO.class);
+                documentList.add(docVo);
+
+                // 파일 업로드 후에 채팅 전송
+                if (docVo.getUid().equals(UserInfo.getUid())) {
+                    ChatContentsVO chatContentsVO = new ChatContentsVO();
+                    chatContentsVO.setCrcode(chatRoomVO.getCrcode());
+                    chatContentsVO.setDmcode(docVo.getDmcode());
+                    chatContentsVO.setUid(UserInfo.getUid());
+                    chatContentsService.insert(chatContentsVO);
+                }
+                refresh();
+                break;
+        }
+    }
+
+    private void updateTopic(String type, String object){
+
+    }
+
+    private void deleteTopic(String type, String object){
+
     }
 }

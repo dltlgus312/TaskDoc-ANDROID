@@ -1,13 +1,16 @@
 package com.service.taskdoc.service.network.restful.service;
 
+import android.os.AsyncTask;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 
 import com.service.taskdoc.database.transfer.FileVO;
-import com.service.taskdoc.database.transfer.MemoVO;
 import com.service.taskdoc.service.network.restful.crud.FileCRUD;
-import com.service.taskdoc.service.network.restful.crud.MemoCRUD;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.OnAttachmentDownloadListener;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.RequestBuilder;
 
 import java.io.File;
@@ -16,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.logging.FileHandler;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -31,8 +35,13 @@ public class FileService {
 
     private FileLoadService fileLoadService;
 
+    private Handler handler;
+
+
     public FileService() {
+        this.fileLoadService = fileLoadService;
         service = RequestBuilder.createService(FileCRUD.class);
+        handler = new Handler(Looper.getMainLooper());
     }
 
     public void work(NetworkSuccessWork networkSuccessWork) {
@@ -84,26 +93,35 @@ public class FileService {
 
     public void download(FileVO vo) {
         Call<ResponseBody> request = service.downloadFile(vo.getFcode());
+        fileLoadService.start(vo);
         request.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 if (response.body() != null) {
-                    boolean isDown = writeResponseBodyToDisk(response.body(), vo.getFname());
-                    if (fileLoadService != null && isDown) {
-                        fileLoadService.downloadEnd();
-                    }
+                    Thread t = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            writeResponseBodyToDisk(response.body(), vo.getFname());
+                        }
+                    });
+                    t.start();
                 }
             }
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 Log.d(TAG, t.getMessage());
-                if (fileLoadService != null) fileLoadService.fail(t.getMessage());
+                fileLoadService.fail(t.getMessage());
             }
         });
     }
 
-    private boolean writeResponseBodyToDisk(ResponseBody body, String fname) {
+
+    /*
+     * Stored
+     * */
+
+    private void writeResponseBodyToDisk(ResponseBody body, String fname) {
         try {
             // todo change the file location/name according to your needs
             File file = new File(Environment.getExternalStorageDirectory() + File.separator + "Download", fname);
@@ -119,10 +137,6 @@ public class FileService {
                 long fileSize = body.contentLength();
                 long fileSizeDownloaded = 0;
 
-                if (fileLoadService != null) {
-                    fileLoadService.downloadStart(fileSize, fileSizeDownloaded);
-                }
-
                 inputStream = body.byteStream();
                 outputStream = new FileOutputStream(file);
 
@@ -133,13 +147,19 @@ public class FileService {
                         break;
                     }
 
+                    if (fileLoadService != null) {
+                        long finalFileSizeDownloaded = fileSizeDownloaded;
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                fileLoadService.update(finalFileSizeDownloaded, fileSize);
+                            }
+                        });
+                    }
+
                     outputStream.write(fileReader, 0, read);
 
                     fileSizeDownloaded += read;
-
-                    if (fileLoadService != null) {
-                        fileLoadService.downloadUpdate(fileSize, fileSizeDownloaded);
-                    }
 
                     Log.d(TAG, "file download: " + fileSizeDownloaded + " of " + fileSize);
                 }
@@ -147,13 +167,14 @@ public class FileService {
 
                 outputStream.flush();
 
-                return true;
             } catch (IOException e) {
                 e.printStackTrace();
-                if (fileLoadService != null) {
-                    fileLoadService.fail("파일 저장 실패");
-                }
-                return false;
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        fileLoadService.fail("파일 저장 실패");
+                    }
+                });
             } finally {
                 if (inputStream != null) {
                     inputStream.close();
@@ -162,24 +183,34 @@ public class FileService {
                 if (outputStream != null) {
                     outputStream.close();
                 }
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        fileLoadService.end();
+
+                    }
+                });
             }
         } catch (IOException e) {
             e.printStackTrace();
-            if (fileLoadService != null) {
-                fileLoadService.fail("파일 저장 실패");
-            }
-            return false;
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    fileLoadService.fail("파일 저장 실패");
+                }
+            });
         }
     }
+
 
     public interface FileLoadService {
         void fail(String msg);
 
-        void downloadStart(long totalSize, long nowSize);
+        void start(FileVO vo);
 
-        void downloadUpdate(long totalSize, long nowSize);
+        void update(long percent, long total);
 
-        void downloadEnd();
+        void end();
     }
 
 }

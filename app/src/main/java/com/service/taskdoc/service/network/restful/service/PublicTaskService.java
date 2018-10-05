@@ -10,7 +10,7 @@ import com.service.taskdoc.database.business.transfer.Task;
 import com.service.taskdoc.database.transfer.PrivateTaskVO;
 import com.service.taskdoc.database.transfer.PublicTaskVO;
 import com.service.taskdoc.service.network.restful.crud.PublicTaskCRUD;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.RequestBuilder;
 
 import java.lang.reflect.Type;

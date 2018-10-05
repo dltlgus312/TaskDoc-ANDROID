@@ -3,12 +3,11 @@ package com.service.taskdoc.display.custom.ganttchart;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 
-import com.service.taskdoc.service.system.support.ConvertDpPixels;
+import com.service.taskdoc.service.system.support.service.ConvertDpPixels;
 
 import java.util.List;
 

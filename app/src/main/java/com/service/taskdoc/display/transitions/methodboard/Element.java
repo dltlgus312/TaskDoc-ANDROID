@@ -19,9 +19,9 @@ import com.service.taskdoc.database.business.transfer.Task;
 import com.service.taskdoc.database.transfer.PublicTaskVO;
 import com.service.taskdoc.display.activity.MethodBoardViewActivity;
 import com.service.taskdoc.display.recycle.TaskCycle;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.network.restful.service.PublicTaskService;
-import com.service.taskdoc.service.system.support.OnBackPressedListener;
+import com.service.taskdoc.service.system.support.listener.OnBackPressedListener;
 
 import java.util.List;
 

@@ -1,24 +1,14 @@
 package com.service.taskdoc.service.network.restful.service;
 
-import android.app.Service;
-import android.content.Intent;
-import android.os.IBinder;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.google.gson.Gson;
 import com.service.taskdoc.database.business.transfer.Chating;
 import com.service.taskdoc.database.business.transfer.UserInfos;
 import com.service.taskdoc.database.transfer.ChatContentsVO;
-import com.service.taskdoc.database.transfer.MemoVO;
-import com.service.taskdoc.database.transfer.UserInfoVO;
 import com.service.taskdoc.service.network.restful.crud.ChatContentsCRUD;
-import com.service.taskdoc.service.network.restful.crud.MemoCRUD;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.RequestBuilder;
-import com.service.taskdoc.service.system.support.StompBuilder;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;

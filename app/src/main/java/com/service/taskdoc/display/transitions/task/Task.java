@@ -19,13 +19,12 @@ import android.widget.LinearLayout;
 import com.google.gson.Gson;
 import com.service.taskdoc.R;
 import com.service.taskdoc.database.business.Tasks;
-import com.service.taskdoc.database.business.transfer.Project;
 import com.service.taskdoc.display.activity.GanttChartActivity;
 import com.service.taskdoc.display.activity.ProjectActivity;
 import com.service.taskdoc.display.activity.ProjectProgressActivity;
 import com.service.taskdoc.service.network.restful.service.PrivateTaskService;
 import com.service.taskdoc.service.network.restful.service.PublicTaskService;
-import com.service.taskdoc.service.system.support.OnBackPressedListener;
+import com.service.taskdoc.service.system.support.listener.OnBackPressedListener;
 
 public class Task extends Fragment implements OnBackPressedListener {
 

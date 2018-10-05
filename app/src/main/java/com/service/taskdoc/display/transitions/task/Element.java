@@ -32,9 +32,9 @@ import com.service.taskdoc.display.recycle.TaskCycle;
 import com.service.taskdoc.service.network.restful.service.MemoService;
 import com.service.taskdoc.service.network.restful.service.PrivateTaskService;
 import com.service.taskdoc.service.network.restful.service.PublicTaskService;
-import com.service.taskdoc.service.system.support.ConvertDpPixels;
-import com.service.taskdoc.service.system.support.KeyboardManager;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.service.ConvertDpPixels;
+import com.service.taskdoc.service.system.support.service.KeyboardManager;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 
 import java.util.ArrayList;
 import java.util.List;

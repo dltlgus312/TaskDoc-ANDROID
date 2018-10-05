@@ -14,7 +14,7 @@ import com.service.taskdoc.R;
 import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.transfer.UserInfoVO;
 import com.service.taskdoc.display.activity.MethodListActivity;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.network.restful.service.UserInfoService;
 
 public class MyInfo extends Fragment implements NetworkSuccessWork {

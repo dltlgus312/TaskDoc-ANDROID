@@ -11,7 +11,7 @@ import android.widget.TextView;
 import com.service.taskdoc.R;
 import com.service.taskdoc.database.transfer.MethodBoardVO;
 import com.service.taskdoc.display.activity.MethodBoardViewActivity;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.network.restful.service.MethodBoardService;
 
 public class Contents extends Fragment implements NetworkSuccessWork {

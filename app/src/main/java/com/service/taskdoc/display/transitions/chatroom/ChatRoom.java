@@ -22,7 +22,6 @@ import com.service.taskdoc.database.business.ChatRoomInfo;
 import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.business.transfer.UserInfos;
 import com.service.taskdoc.database.transfer.ChatContentsVO;
-import com.service.taskdoc.database.transfer.ChatRoomJoinVO;
 import com.service.taskdoc.database.transfer.ChatRoomVO;
 import com.service.taskdoc.database.transfer.ProjectVO;
 import com.service.taskdoc.database.transfer.UserInfoVO;
@@ -32,7 +31,7 @@ import com.service.taskdoc.display.recycle.ChatRoomCycle;
 import com.service.taskdoc.display.recycle.UsersCycle;
 import com.service.taskdoc.service.network.restful.service.ChatRoomJoinService;
 import com.service.taskdoc.service.network.restful.service.ChatRoomService;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.StompBuilder;
 
 import java.util.ArrayList;

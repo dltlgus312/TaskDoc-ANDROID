@@ -6,23 +6,19 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.service.taskdoc.R;
 import com.service.taskdoc.database.business.transfer.Task;
 import com.service.taskdoc.database.transfer.DocumentVO;
-import com.service.taskdoc.database.transfer.MethodBoardVO;
 import com.service.taskdoc.display.recycle.DocumentCycle;
 import com.service.taskdoc.service.network.restful.service.DocumentService;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 
 import java.util.ArrayList;
 import java.util.List;

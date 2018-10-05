@@ -14,9 +14,9 @@ import android.widget.Toast;
 
 import com.service.taskdoc.R;
 import com.service.taskdoc.database.transfer.UserInfoVO;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.network.restful.service.UserInfoService;
-import com.service.taskdoc.service.system.support.KeyboardManager;
+import com.service.taskdoc.service.system.support.service.KeyboardManager;
 
 public class LoginActivity extends AppCompatActivity implements NetworkSuccessWork {
 

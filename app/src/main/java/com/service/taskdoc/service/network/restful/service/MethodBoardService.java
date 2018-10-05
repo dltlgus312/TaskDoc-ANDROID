@@ -4,7 +4,7 @@ import android.util.Log;
 
 import com.service.taskdoc.database.transfer.MethodBoardVO;
 import com.service.taskdoc.service.network.restful.crud.MethodBoardCRUD;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.RequestBuilder;
 
 import java.util.List;

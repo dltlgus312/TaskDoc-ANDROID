@@ -1,4 +1,4 @@
-package com.service.taskdoc.service.system.support;
+package com.service.taskdoc.service.system.support.service;
 
 import android.animation.ValueAnimator;
 import android.view.View;

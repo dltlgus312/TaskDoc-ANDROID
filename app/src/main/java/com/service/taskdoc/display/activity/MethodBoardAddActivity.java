@@ -25,9 +25,9 @@ import com.service.taskdoc.database.business.Projects;
 import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.business.transfer.Project;
 import com.service.taskdoc.database.transfer.MethodBoardVO;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.network.restful.service.MethodBoardService;
-import com.service.taskdoc.service.system.support.KeyboardManager;
+import com.service.taskdoc.service.system.support.service.KeyboardManager;
 
 public class MethodBoardAddActivity extends AppCompatActivity {
 

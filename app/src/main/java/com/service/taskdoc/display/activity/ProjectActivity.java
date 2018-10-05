@@ -1,12 +1,8 @@
 package com.service.taskdoc.display.activity;
 
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Looper;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -17,9 +13,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
 import com.service.taskdoc.R;
-import com.service.taskdoc.database.business.Projects;
 import com.service.taskdoc.database.business.Tasks;
 import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.display.transitions.project.Configure;
@@ -28,11 +22,8 @@ import com.service.taskdoc.display.transitions.project.MyInfo;
 import com.service.taskdoc.display.transitions.project.Project;
 import com.service.taskdoc.display.transitions.task.Task;
 import com.service.taskdoc.service.network.restful.service.PrivateTaskService;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
-import com.service.taskdoc.service.system.support.OnBackPressedListener;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.OnBackPressedListener;
 
 public class ProjectActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {

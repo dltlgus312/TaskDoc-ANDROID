@@ -4,10 +4,9 @@ import android.util.Log;
 
 import com.service.taskdoc.database.transfer.MemoVO;
 import com.service.taskdoc.service.network.restful.crud.MemoCRUD;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.RequestBuilder;
 
-import java.nio.file.Path;
 import java.util.List;
 
 import retrofit2.Call;

@@ -5,20 +5,16 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.service.taskdoc.database.business.ChatRoomInfo;
-import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.business.transfer.UserInfos;
 import com.service.taskdoc.database.transfer.ChatRoomJoinVO;
 import com.service.taskdoc.database.transfer.ChatRoomVO;
-import com.service.taskdoc.database.transfer.MemoVO;
-import com.service.taskdoc.database.transfer.ProjectJoinVO;
 import com.service.taskdoc.database.transfer.UserInfoVO;
 import com.service.taskdoc.service.network.restful.crud.ChatRoomJoinCRUD;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.RequestBuilder;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 

@@ -1,20 +1,11 @@
 package com.service.taskdoc.display.recycle;
 
-import android.animation.ValueAnimator;
-import android.annotation.SuppressLint;
-import android.graphics.Bitmap;
-import android.media.ExifInterface;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.CardView;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateDecelerateInterpolator;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -26,10 +17,8 @@ import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.service.taskdoc.R;
 import com.service.taskdoc.database.business.Tasks;
-import com.service.taskdoc.database.business.transfer.Project;
 import com.service.taskdoc.database.business.transfer.Task;
-import com.service.taskdoc.display.activity.ProjectActivity;
-import com.service.taskdoc.service.system.support.DownActionView;
+import com.service.taskdoc.service.system.support.service.DownActionView;
 
 import java.util.ArrayList;
 import java.util.List;

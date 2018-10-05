@@ -24,7 +24,7 @@ import com.service.taskdoc.database.transfer.NoticeVO;
 import com.service.taskdoc.display.activity.ProjectProgressActivity;
 import com.service.taskdoc.display.recycle.NoticeCycle;
 import com.service.taskdoc.service.network.restful.service.NoticeService;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 
 import java.util.List;
 

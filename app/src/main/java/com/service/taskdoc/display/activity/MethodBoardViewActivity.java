@@ -24,10 +24,10 @@ import com.service.taskdoc.database.transfer.MethodBoardVO;
 import com.service.taskdoc.database.transfer.MethodListVO;
 import com.service.taskdoc.display.transitions.methodboard.Contents;
 import com.service.taskdoc.display.transitions.methodboard.Element;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.network.restful.service.MethodBoardService;
 import com.service.taskdoc.service.network.restful.service.MethodListService;
-import com.service.taskdoc.service.system.support.OnBackPressedListener;
+import com.service.taskdoc.service.system.support.listener.OnBackPressedListener;
 
 public class MethodBoardViewActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {

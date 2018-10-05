@@ -12,7 +12,7 @@ import com.service.taskdoc.database.transfer.ProjectJoinVO;
 import com.service.taskdoc.database.transfer.ProjectVO;
 import com.service.taskdoc.database.transfer.UserInfoVO;
 import com.service.taskdoc.service.network.restful.crud.ProjectJoinCRUD;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.RequestBuilder;
 
 import java.lang.reflect.Type;

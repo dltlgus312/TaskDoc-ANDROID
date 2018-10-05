@@ -22,7 +22,7 @@ import com.service.taskdoc.database.business.Methods;
 import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.transfer.MethodListVO;
 import com.service.taskdoc.display.recycle.MethodListCycle;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.network.restful.service.MethodBoardService;
 import com.service.taskdoc.service.network.restful.service.MethodListService;
 

@@ -4,14 +4,10 @@ import android.util.Log;
 
 import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.transfer.DocumentVO;
-import com.service.taskdoc.database.transfer.MemoVO;
 import com.service.taskdoc.service.network.restful.crud.DocumentCRUD;
-import com.service.taskdoc.service.network.restful.crud.MemoCRUD;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.RequestBuilder;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import okhttp3.MediaType;
@@ -20,7 +16,6 @@ import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.http.Multipart;
 
 public class DocumentService {
 
@@ -131,7 +126,7 @@ public class DocumentService {
                 if (response.body() != -1) {
                     vo.setDmcode(response.body());
                     if (fileLoadService != null){
-                        fileLoadService.success();
+                        fileLoadService.success(vo);
                     }
                 }
             }
@@ -219,7 +214,7 @@ public class DocumentService {
     }
 
     public interface FileLoadService{
-        void success();
+        void success(DocumentVO vo);
         void fail(String msg);
     }
 

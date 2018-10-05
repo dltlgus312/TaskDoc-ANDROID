@@ -35,8 +35,8 @@ import com.service.taskdoc.display.custom.ganttchart.Data;
 import com.service.taskdoc.display.custom.ganttchart.GanttChart;
 import com.service.taskdoc.display.custom.custom.chart.TaskBarItem;
 import com.service.taskdoc.display.custom.ganttchart.OnTheBarItem;
-import com.service.taskdoc.service.system.support.ConvertDpPixels;
-import com.service.taskdoc.service.system.support.DownActionView;
+import com.service.taskdoc.service.system.support.service.ConvertDpPixels;
+import com.service.taskdoc.service.system.support.service.DownActionView;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;

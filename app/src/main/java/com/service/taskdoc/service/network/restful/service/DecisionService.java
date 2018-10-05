@@ -3,15 +3,12 @@ package com.service.taskdoc.service.network.restful.service;
 import android.util.Log;
 
 import com.service.taskdoc.database.transfer.DecisionVO;
-import com.service.taskdoc.database.transfer.DocumentVO;
 import com.service.taskdoc.service.network.restful.crud.DecisionCRUD;
-import com.service.taskdoc.service.network.restful.crud.DocumentCRUD;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.RequestBuilder;
 
 import java.util.List;
 
-import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;

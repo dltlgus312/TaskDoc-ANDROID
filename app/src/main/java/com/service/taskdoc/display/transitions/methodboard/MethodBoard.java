@@ -24,9 +24,9 @@ import com.service.taskdoc.database.transfer.MethodBoardVO;
 import com.service.taskdoc.display.activity.MethodBoardAddActivity;
 import com.service.taskdoc.display.activity.MethodBoardViewActivity;
 import com.service.taskdoc.display.recycle.MethodCycle;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.network.restful.service.MethodBoardService;
-import com.service.taskdoc.service.system.support.KeyboardManager;
+import com.service.taskdoc.service.system.support.service.KeyboardManager;
 
 import java.util.ArrayList;
 import java.util.List;

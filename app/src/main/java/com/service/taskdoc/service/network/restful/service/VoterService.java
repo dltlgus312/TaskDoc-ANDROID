@@ -2,18 +2,15 @@ package com.service.taskdoc.service.network.restful.service;
 
 import android.util.Log;
 
-import com.service.taskdoc.database.transfer.FileVO;
 import com.service.taskdoc.database.transfer.VoterVO;
-import com.service.taskdoc.service.network.restful.crud.FileCRUD;
 import com.service.taskdoc.service.network.restful.crud.VoterCRUD;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.RequestBuilder;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;

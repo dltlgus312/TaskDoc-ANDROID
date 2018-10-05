@@ -6,7 +6,7 @@ import android.util.Log;
 import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.transfer.UserInfoVO;
 import com.service.taskdoc.service.network.restful.crud.UserInfoCRUD;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.RequestBuilder;
 
 import retrofit2.Call;

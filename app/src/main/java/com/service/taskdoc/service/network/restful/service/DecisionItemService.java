@@ -3,11 +3,8 @@ package com.service.taskdoc.service.network.restful.service;
 import android.util.Log;
 
 import com.service.taskdoc.database.transfer.DecisionItemVO;
-import com.service.taskdoc.database.transfer.MemoVO;
-import com.service.taskdoc.service.network.restful.crud.DecisionCRUD;
 import com.service.taskdoc.service.network.restful.crud.DecisionItemCRUD;
-import com.service.taskdoc.service.network.restful.crud.MemoCRUD;
-import com.service.taskdoc.service.system.support.NetworkSuccessWork;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.RequestBuilder;
 
 import java.util.List;
