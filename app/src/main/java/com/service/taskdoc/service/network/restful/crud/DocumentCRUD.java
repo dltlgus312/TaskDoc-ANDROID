@@ -5,6 +5,7 @@ import com.service.taskdoc.database.transfer.MemoVO;
 
 import java.util.List;
 
+import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -28,7 +29,12 @@ public interface DocumentCRUD {
 
     @Multipart
     @POST("/document/upload")
-    Call<Integer> uploadDocument(@Part("file") RequestBody[] part, @Part("documentVo") DocumentVO documentVO);
+    Call<Integer> uploadDocument(@Part MultipartBody.Part[] multipart,
+                                 @Part("dmtitle") RequestBody dmtitle,
+                                 @Part("dmcontents") RequestBody dmcontents,
+                                 @Part("uid") RequestBody uid,
+                                 @Part("tcode") RequestBody tcode,
+                                 @Part("crcode") RequestBody crcode);
 
     @PUT("/document/move") // 파일도 이동된다.
     Call<Integer> moveDocument(@Body DocumentVO documentVO);

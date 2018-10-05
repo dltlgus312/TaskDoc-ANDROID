@@ -22,7 +22,6 @@ public abstract class BarItem {
     private boolean clickable = true;
 
 
-
     private float titleTextSize;
     private float titleTextWidth;
 
@@ -50,9 +49,9 @@ public abstract class BarItem {
 
 
     /*
-    *
-    *  Main Value
-    * */
+     *
+     *  Main Value
+     * */
 
     private float left;
     private float top;
@@ -121,7 +120,7 @@ public abstract class BarItem {
             canvas.drawRect(left, top, left + percentage * percent, bottom, barColor);
         }
 
-        if (barClicked) drawModifyPercent(canvas);
+        if (barClicked && onBarClickListener==null) drawModifyPercent(canvas);
     }
 
     void drawTitle(Canvas canvas) {
@@ -145,11 +144,15 @@ public abstract class BarItem {
     }
 
     void drawModifyPercent(Canvas canvas) {
-        modifyArc = new RectF(left - titleTextSize + percentage * percent,
-                top - titleTextSize * 2, left + titleTextSize + percentage * percent, top);
+        if (onBarClickListener == null) {
+            modifyArc = new RectF(left - titleTextSize + percentage * percent,
+                    top - titleTextSize * 2, left + titleTextSize + percentage * percent, top);
 
-        canvas.drawArc(modifyArc, 0, 360, false, modifyArcPaint);
-        canvas.drawLine(modifyArc.centerX(), top, modifyArc.centerX(), bottom, modifyArcPaint);
+            canvas.drawArc(modifyArc, 0, 360, false, modifyArcPaint);
+            canvas.drawLine(modifyArc.centerX(), top, modifyArc.centerX(), bottom, modifyArcPaint);
+        }else {
+
+        }
     }
 
     void drawPercent(Canvas canvas) {
@@ -158,7 +161,7 @@ public abstract class BarItem {
 
         if (percent == 100) {
             paint.setColor(highlightColor);
-        }else {
+        } else {
             paint.setColor(textColor);
         }
         canvas.drawText(percent + "%", right + (height / 3), bottom, paint);
@@ -190,9 +193,16 @@ public abstract class BarItem {
         }
 
         if (isClickable() && x < right && x > left && y < bottom && y > top) {
-            textPaint.setColor(Color.CYAN);
-            barClicked = true;
-            click = true;
+            if (onBarClickListener != null){
+                onBarClickListener.itemSelect(this);
+                textPaint.setColor(Color.GREEN);
+                barClicked = true;
+                click = true;
+            }else {
+                textPaint.setColor(Color.CYAN);
+                barClicked = true;
+                click = true;
+            }
         } else if (x > startTextPosition && x < startTextPosition + titleTextWidth && y < bottom && y > top) {
             titleClicked = true;
             click = true;
@@ -225,16 +235,16 @@ public abstract class BarItem {
 
 
     /*
-    *
-    * Override
-    * */
+     *
+     * Override
+     * */
     protected abstract void updatePercent(int percent);
 
 
     /*
-    *
-    * Service
-    * */
+     *
+     * Service
+     * */
 
     boolean isModifyClicked() {
         return modifyClicked;
@@ -260,7 +270,7 @@ public abstract class BarItem {
         this.percentage = percentage;
     }
 
-    void calculation(){
+    void calculation() {
         height = bottom - top;
         titleTextSize = height * 0.5f;
         percentTextSize = titleTextSize * 0.8f;
@@ -421,11 +431,21 @@ public abstract class BarItem {
 
 
     /*
-    *
-    *  Listener
-    * */
+     *
+     *  Listener
+     * */
 
     GanttChart.OnTheBarDrawClickListener onTheBarDrawClickListener;
+
+    GanttChart.OnBarClickListener onBarClickListener;
+
+    public GanttChart.OnBarClickListener getOnBarClickListener() {
+        return onBarClickListener;
+    }
+
+    public void setOnBarClickListener(GanttChart.OnBarClickListener onBarClickListener) {
+        this.onBarClickListener = onBarClickListener;
+    }
 
     public GanttChart.OnTheBarDrawClickListener getOnTheBarDrawClickListener() {
         return onTheBarDrawClickListener;

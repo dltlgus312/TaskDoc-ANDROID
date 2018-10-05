@@ -291,6 +291,15 @@ public class Data {
                 });
             }
 
+            if (item.getOnBarClickListener() == null && onBarClickListener != null) {
+                item.setOnBarClickListener(new GanttChart.OnBarClickListener() {
+                    @Override
+                    public void itemSelect(BarItem barItem) {
+                        onBarClickListener.itemSelect(barItem);
+                    }
+                });
+            }
+
             if (startDate.compareTo(item.getSdate()) > 0) {
                 startDate.setTime(item.getSdate().getTime());
             }
@@ -360,6 +369,8 @@ public class Data {
 
     GanttChart.OnTheBarDrawClickListener onTheBarDrawClickListener;
 
+    GanttChart.OnBarClickListener onBarClickListener;
+
     GanttChart.OnTheBarDrawClickListener getOnTheBarDrawClickListener() {
         return onTheBarDrawClickListener;
     }
@@ -368,6 +379,13 @@ public class Data {
         this.onTheBarDrawClickListener = onBarClickListener;
     }
 
+    public GanttChart.OnBarClickListener getOnBarClickListener() {
+        return onBarClickListener;
+    }
+
+    public void setOnBarClickListener(GanttChart.OnBarClickListener onBarClickListener) {
+        this.onBarClickListener = onBarClickListener;
+    }
 
     /*
     * Getter, Setter

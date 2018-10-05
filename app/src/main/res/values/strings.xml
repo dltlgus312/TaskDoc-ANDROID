@@ -25,6 +25,10 @@
     <string name="method_board_nav_title">방법론 게시판</string>
     <string name="method_board_nav_banner">해당 게시물은 게시자가 직접 관리 합니다.</string>
 
+
+    <string name="title">제목 입력</string>
+    <string name="contents">내용 입력</string>
+
     <!-- Strings related to project progress -->
     <string name="title_activity_project_progress">ProjectProgress</string>
     <string name="tab_text_1">대화방</string>

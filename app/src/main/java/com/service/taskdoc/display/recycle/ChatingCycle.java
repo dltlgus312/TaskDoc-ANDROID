@@ -39,7 +39,7 @@ public class ChatingCycle extends RecyclerView.Adapter<ChatingCycle.ViewHolder> 
         this.chatContentsList = chatContentsList;
         this.documentList = documentList;
         this.decisionList = decisionList;
-        this.chatContentsList = chatContentsList;
+        this.chatRoomList = chatRoomList;
     }
 
     @NonNull
@@ -147,6 +147,14 @@ public class ChatingCycle extends RecyclerView.Adapter<ChatingCycle.ViewHolder> 
             contents.addView(text);
         }
 
+    }
+
+    public OnClickListener getOnClickListener() {
+        return onClickListener;
+    }
+
+    public void setOnClickListener(OnClickListener onClickListener) {
+        this.onClickListener = onClickListener;
     }
 
     public Button documentSettingUi(String title, String mode, ViewGroup viewGroup){

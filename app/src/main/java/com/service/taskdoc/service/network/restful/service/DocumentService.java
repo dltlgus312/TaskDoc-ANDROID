@@ -11,8 +11,11 @@ import com.service.taskdoc.service.system.support.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.RequestBuilder;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -27,6 +30,7 @@ public class DocumentService {
 
 
     private NetworkSuccessWork networkSuccessWork;
+    private FileLoadService fileLoadService;
     private DocumentCRUD service;
 
     private int crcode;
@@ -38,6 +42,14 @@ public class DocumentService {
 
     public void work(NetworkSuccessWork networkSuccessWork) {
         this.networkSuccessWork = networkSuccessWork;
+    }
+
+    public FileLoadService getFileLoadService() {
+        return fileLoadService;
+    }
+
+    public void setFileLoadService(FileLoadService fileLoadService) {
+        this.fileLoadService = fileLoadService;
     }
 
     public void setDocumentList(List<DocumentVO> documentList){
@@ -98,20 +110,38 @@ public class DocumentService {
         });
     }
 
-    public void insert(RequestBody[] file, DocumentVO vo) {
-        Call<Integer> request = service.uploadDocument(file, vo);
+    public void upload(List<MultipartBody.Part> multiPartList, DocumentVO vo) {
+        MultipartBody.Part[] fileList = multiPartList.toArray(new MultipartBody.Part[multiPartList.size()]);
+
+        RequestBody dmtitle =
+                RequestBody.create(MediaType.parse("multipart/form-data"), vo.getDmtitle());
+        RequestBody dmcontents =
+                RequestBody.create(MediaType.parse("multipart/form-data"), vo.getDmcontents());
+        RequestBody uid =
+                RequestBody.create(MediaType.parse("multipart/form-data"), vo.getUid());
+        RequestBody tcode =
+                RequestBody.create(MediaType.parse("multipart/form-data"), vo.getTcode()+"");
+        RequestBody crcode =
+                RequestBody.create(MediaType.parse("multipart/form-data"), vo.getCrcode()+"");
+
+        Call<Integer> request = service.uploadDocument(fileList, dmtitle, dmcontents, uid, tcode, crcode);
         request.enqueue(new Callback<Integer>() {
             @Override
             public void onResponse(Call<Integer> call, Response<Integer> response) {
-                int result = response.body();
-                if (result != -1) {
-                    networkSuccessWork.work(result);
+                if (response.body() != -1) {
+                    vo.setDmcode(response.body());
+                    if (fileLoadService != null){
+                        fileLoadService.success();
+                    }
                 }
             }
 
             @Override
             public void onFailure(Call<Integer> call, Throwable t) {
                 Log.d(TAG, t.getMessage());
+                if (fileLoadService != null){
+                    fileLoadService.fail(t.getMessage());
+                }
             }
         });
     }
@@ -186,6 +216,11 @@ public class DocumentService {
                 Log.d(TAG, t.getMessage());
             }
         });
+    }
+
+    public interface FileLoadService{
+        void success();
+        void fail(String msg);
     }
 
 }

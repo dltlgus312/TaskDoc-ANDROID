@@ -254,6 +254,8 @@ public class GanttChart extends ViewGroup {
 
     OnTheBarDrawClickListener onTheBarDrawClickListener;
 
+    OnBarClickListener onBarClickListener;
+
     OnTheChartDrawListener onTheChartDrawListener;
 
     public void setSeekBarListener(SeekBarListener seekBarListener) {
@@ -275,6 +277,22 @@ public class GanttChart extends ViewGroup {
                 @Override
                 public void itemSelect(BarItem barItem, List<OnTheBarItem> onTheBarItemItem) {
                     if(onTheBarDrawClickListener!=null) onTheBarDrawClickListener.itemSelect(barItem, onTheBarItemItem);
+                }
+            });
+        }
+    }
+
+    public OnBarClickListener getOnBarClickListener() {
+        return onBarClickListener;
+    }
+
+    public void setOnBarClickListener(OnBarClickListener onBarClickListener) {
+        this.onBarClickListener = onBarClickListener;
+        if (data != null){
+            this.data.setOnBarClickListener(new OnBarClickListener() {
+                @Override
+                public void itemSelect(BarItem barItem) {
+                    if (onBarClickListener != null) onBarClickListener.itemSelect(barItem);
                 }
             });
         }
@@ -322,6 +340,15 @@ public class GanttChart extends ViewGroup {
                 @Override
                 public void itemSelect(BarItem barItem, List<OnTheBarItem> onTheBarItemItem) {
                     if(onTheBarDrawClickListener!=null) onTheBarDrawClickListener.itemSelect(barItem, onTheBarItemItem);
+                }
+            });
+        }
+
+        if (onBarClickListener != null){
+            this.data.setOnBarClickListener(new OnBarClickListener() {
+                @Override
+                public void itemSelect(BarItem barItem) {
+                    if (onBarClickListener != null) onBarClickListener.itemSelect(barItem);
                 }
             });
         }
@@ -397,6 +424,10 @@ public class GanttChart extends ViewGroup {
     public interface OnTheChartDrawListener {
         void drawFront(Canvas canvas);
         void drawBack(Canvas canvas);
+    }
+
+    public interface OnBarClickListener{
+        void itemSelect(BarItem barItem);
     }
 
 }

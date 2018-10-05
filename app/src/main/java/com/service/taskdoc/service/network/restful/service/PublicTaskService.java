@@ -53,9 +53,25 @@ public class PublicTaskService {
         request.enqueue(new Callback<List<PublicTaskVO>>() {
             @Override
             public void onResponse(Call<List<PublicTaskVO>> call, Response<List<PublicTaskVO>> response) {
-                List<PublicTaskVO> result = response.body();
-                if(result.size() > 0){
-                    networkSuccessWork.work(result);
+                if(response.body().size() > 0){
+
+                    for (PublicTaskVO vo : response.body()) {
+                        Task t = new Task();
+
+                        PublicTaskVO v = vo;
+                        t.setCode(v.getTcode());
+                        t.setTitle(v.getTtitle());
+                        t.setColor(v.getTcolor());
+                        t.setSdate(v.getTsdate());
+                        t.setEdate(v.getTedate());
+                        t.setPercent(v.getTpercent());
+                        t.setRefference(v.getTrefference());
+                        t.setSequence(v.getTsequence());
+                        t.setRefpcode(v.getPcode());
+
+                        tasks.addSort(t);
+                    }
+                    networkSuccessWork.work();
                 }
             }
 

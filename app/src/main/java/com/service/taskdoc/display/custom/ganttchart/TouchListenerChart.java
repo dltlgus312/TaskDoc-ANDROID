@@ -41,7 +41,8 @@ public class TouchListenerChart implements View.OnTouchListener {
                 touchX = event.getX();
                 touchY = event.getY();
 
-                if (refBarItem != null) refBarItem.modifyClickPosition(touchX, touchY);
+                if (refBarItem != null && chart.getOnBarClickListener() == null)
+                    refBarItem.modifyClickPosition(touchX, touchY);
 
                 if (chart.seekBarListener != null) {
                     chart.seekBarCount = chart.SEEKBARCOUNT;
