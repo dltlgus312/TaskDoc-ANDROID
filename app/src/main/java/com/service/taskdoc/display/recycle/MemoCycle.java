@@ -113,7 +113,7 @@ public class MemoCycle extends RecyclerView.Adapter<MemoCycle.ViewHolder> {
     }
 
     public interface OnClickListener {
-        public void onModifyClick(MemoVO memo, String changeText);
-        public void onDeleteClick(MemoVO memo);
+        void onModifyClick(MemoVO memo, String changeText);
+        void onDeleteClick(MemoVO memo);
     }
 }

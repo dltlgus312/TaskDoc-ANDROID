@@ -27,6 +27,8 @@ import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.business.transfer.Project;
 import com.service.taskdoc.database.business.transfer.UserInfos;
 import com.service.taskdoc.database.transfer.ChatRoomJoinVO;
+import com.service.taskdoc.database.transfer.ChatRoomVO;
+import com.service.taskdoc.database.transfer.DecisionVO;
 import com.service.taskdoc.database.transfer.DocumentVO;
 import com.service.taskdoc.database.transfer.NoticeVO;
 import com.service.taskdoc.database.transfer.ProjectJoinVO;
@@ -35,6 +37,8 @@ import com.service.taskdoc.display.transitions.progress.Tab1;
 import com.service.taskdoc.display.transitions.progress.Tab2;
 import com.service.taskdoc.display.transitions.progress.Tab3;
 import com.service.taskdoc.service.network.restful.service.ChatRoomJoinService;
+import com.service.taskdoc.service.network.restful.service.ChatRoomService;
+import com.service.taskdoc.service.network.restful.service.DecisionService;
 import com.service.taskdoc.service.network.restful.service.DocumentService;
 import com.service.taskdoc.service.network.restful.service.NoticeService;
 import com.service.taskdoc.service.network.restful.service.PrivateTaskService;
@@ -61,11 +65,13 @@ public class ProjectProgressActivity extends AppCompatActivity
     private Tab3 tab3 = new Tab3();
 
 
-    public List<DocumentVO> documentList = new ArrayList<>();
-    public List<ChatRoomInfo> chatRoomInfoList = new ArrayList<>();
+    public Tasks tasks = new Tasks();
     public List<NoticeVO> noticeList = new ArrayList<>();
     public List<UserInfos> userInfoList = new ArrayList<>();
-    public Tasks tasks = new Tasks();
+    public List<ChatRoomInfo> chatRoomInfoList = new ArrayList<>();
+    public List<DocumentVO> documentList = new ArrayList<>();
+    public List<DecisionVO> decisionList = new ArrayList<>();
+    public List<ChatRoomVO> chatRoomList = new ArrayList<>();
 
 
     public NoticeService noticeService;
@@ -73,8 +79,10 @@ public class ProjectProgressActivity extends AppCompatActivity
     public ChatRoomJoinService chatRoomJoinService;
     public PublicTaskService publicService;
     public PrivateTaskService privateService;
-    public DocumentService documentService;
     public UserInfoService userInfoService;
+    public DocumentService documentService;
+    public DecisionService decisionService;
+    public ChatRoomService chatRoomService;
 
     public StompBuilder stompBuilder;
 
@@ -141,6 +149,14 @@ public class ProjectProgressActivity extends AppCompatActivity
                 documentService = new DocumentService(chatRoomInfoList.get(0).getChatRoomVO().getCrcode());
                 documentService.setDocumentList(documentList);
                 refreshDocument();
+
+                decisionService = new DecisionService(chatRoomInfoList.get(0).getChatRoomVO().getCrcode());
+                decisionService.setDecisionList(decisionList);
+                refreshDecision();
+
+                chatRoomService = new ChatRoomService(chatRoomInfoList.get(0).getChatRoomVO().getCrcode());
+                chatRoomService.setChatRoomList(chatRoomList);
+                refreshFocusRoom();
             }
         });
 
@@ -220,6 +236,29 @@ public class ProjectProgressActivity extends AppCompatActivity
         documentService.work(new NetworkSuccessWork() {
             @Override
             public void work(Object... objects) {
+                tab1.documentViewRefresh();
+            }
+        });
+    }
+
+    public void refreshDecision(){
+        decisionList.clear();
+
+        decisionService.roomList();
+        decisionService.work(new NetworkSuccessWork() {
+            @Override
+            public void work(Object... objects) { }
+        });
+    }
+
+    public void refreshFocusRoom(){
+        chatRoomList.clear();
+
+        chatRoomService.roomList();
+        chatRoomService.work(new NetworkSuccessWork() {
+            @Override
+            public void work(Object... objects) {
+
             }
         });
     }
@@ -426,36 +465,51 @@ public class ProjectProgressActivity extends AppCompatActivity
 
         switch (msg){
             case StompBuilder.INSERT :
-                switch (type){
-                    case StompBuilder.CHATROOM :
-                        refreshChatRoom();
-                        break;
-                    case StompBuilder.PROJECTJOIN :
-                        break;
-                    case StompBuilder.CHATCONTENTS :
-                        tab1.addChatContentsAlarm(object);
-                        break;
-                }
+                insertTopic(type, object);
                 break;
-
-
             case StompBuilder.UPDATE :
-                switch (type){
-                    case StompBuilder.PROJECTJOIN :
-                        refreshChatRoom();
-                        refreshProjectJoin();
-                        break;
-                }
+                updateTopic(type, object);
                 break;
-
-
             case StompBuilder.DELETE :
-                switch (type){
-                    case StompBuilder.PROJECTJOIN :
-                        refreshProjectJoin();
-                        break;
-                }
+                deleteTopic(type, object);
                 break;
         }
     }
+
+    public void insertTopic(String type, String object){
+        switch (type){
+            case StompBuilder.CHATROOM :
+                if (object.equals("\"\"")) refreshChatRoom();
+                else refreshFocusRoom();
+                break;
+            case StompBuilder.PROJECTJOIN :
+                break;
+            case StompBuilder.CHATCONTENTS :
+                tab1.addChatContentsAlarm(object);
+            case StompBuilder.DOCUMENT :
+                DocumentVO vo = new Gson().fromJson(object, DocumentVO.class);
+                if (vo.getCrcode() == chatRoomInfoList.get(0).getChatRoomVO().getCrcode())
+                    refreshDocument();
+                break;
+            case StompBuilder.DECISION :
+                refreshDecision();
+                break;
+        }
+    }
+    public void updateTopic(String type, String object){
+        switch (type){
+            case StompBuilder.PROJECTJOIN :
+                refreshChatRoom();
+                refreshProjectJoin();
+                break;
+        }
+    }
+    public void deleteTopic(String type, String object){
+        switch (type){
+            case StompBuilder.PROJECTJOIN :
+                refreshProjectJoin();
+                break;
+        }
+    }
+
 }

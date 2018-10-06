@@ -24,6 +24,7 @@ import com.service.taskdoc.database.business.Tasks;
 import com.service.taskdoc.database.business.transfer.Task;
 import com.service.taskdoc.database.transfer.DocumentVO;
 import com.service.taskdoc.display.activity.ProjectProgressActivity;
+import com.service.taskdoc.display.custom.custom.dialog.file.FileDownLoadServiceDialog;
 import com.service.taskdoc.display.recycle.DocumentCycle;
 import com.service.taskdoc.service.system.support.service.ConvertDpPixels;
 import com.service.taskdoc.service.system.support.service.DownActionView;
@@ -171,31 +172,12 @@ public class Element extends Fragment implements DocumentCycle.ClickListener, On
         }
     }
 
-    @Override
-    public void folderClick(Task task) {
-        cycle.go(task);
-        recyclerView.scheduleLayoutAnimation();
-        Button button = new Button(getContext());
-        button.setText(task.getTitle());
-        button.setOnClickListener(this);
-        stack.addView(button);
-    }
 
-    @Override
-    public void folderLongClick(Task task) {
 
-    }
 
-    @Override
-    public void fileClick(DocumentVO vo) {
-
-    }
-
-    @Override
-    public void fileLongClick(DocumentVO vo) {
-
-    }
-
+    /*
+    * External Event
+    * */
     @Override
     public void onBack() {
         if (cycle.canGoBack()){
@@ -216,6 +198,53 @@ public class Element extends Fragment implements DocumentCycle.ClickListener, On
         stack.removeViews(index + 1, stack.getChildCount() - (index + 1));
     }
 
+    public void datachange(){
+        if (cycle != null){
+            cycle.goTo(0);
+            recyclerView.scheduleLayoutAnimation();
+            stack.removeViews(+ 1, stack.getChildCount() - 1);
+        }
+    }
+
+
+
+
+    /*
+     * Cycle Event
+     * */
+
+    @Override
+    public void folderClick(Task task) {
+        cycle.go(task);
+        recyclerView.scheduleLayoutAnimation();
+        Button button = new Button(getContext());
+        button.setText(task.getTitle());
+        button.setOnClickListener(this);
+        stack.addView(button);
+    }
+
+    @Override
+    public void folderLongClick(Task task) {
+
+    }
+
+    @Override
+    public void fileClick(DocumentVO vo) {
+        new FileDownLoadServiceDialog(getContext(), vo);
+    }
+
+    @Override
+    public void fileLongClick(DocumentVO vo) {
+
+    }
+
+
+
+
+
+    /*
+    * Search
+    * */
     @Override
     public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
 

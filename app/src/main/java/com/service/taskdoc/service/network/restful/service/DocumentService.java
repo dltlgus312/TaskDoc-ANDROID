@@ -119,20 +119,19 @@ public class DocumentService {
         RequestBody crcode =
                 RequestBody.create(MediaType.parse("multipart/form-data"), vo.getCrcode()+"");
 
-        Call<Integer> request = service.uploadDocument(fileList, dmtitle, dmcontents, uid, tcode, crcode);
-        request.enqueue(new Callback<Integer>() {
+        Call<DocumentVO> request = service.uploadDocument(fileList, dmtitle, dmcontents, uid, tcode, crcode);
+        request.enqueue(new Callback<DocumentVO>() {
             @Override
-            public void onResponse(Call<Integer> call, Response<Integer> response) {
-                if (response.body() != -1) {
-                    vo.setDmcode(response.body());
+            public void onResponse(Call<DocumentVO> call, Response<DocumentVO> response) {
+                if (response.body() != null) {
                     if (fileLoadService != null){
-                        fileLoadService.success(vo);
+                        fileLoadService.success(response.body());
                     }
                 }
             }
 
             @Override
-            public void onFailure(Call<Integer> call, Throwable t) {
+            public void onFailure(Call<DocumentVO> call, Throwable t) {
                 Log.d(TAG, t.getMessage());
                 if (fileLoadService != null){
                     fileLoadService.fail(t.getMessage());

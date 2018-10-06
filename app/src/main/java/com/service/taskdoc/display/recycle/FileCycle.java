@@ -136,8 +136,6 @@ public class FileCycle extends RecyclerView.Adapter<FileCycle.ViewHolder> {
 
         name.setText(item.getName());
 
-        img.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-
     }
 
     @Override

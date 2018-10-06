@@ -16,6 +16,7 @@ import android.widget.TextView;
 import com.service.taskdoc.R;
 import com.service.taskdoc.database.business.transfer.Task;
 import com.service.taskdoc.database.transfer.DocumentVO;
+import com.service.taskdoc.display.custom.custom.dialog.file.FileDownLoadServiceDialog;
 import com.service.taskdoc.display.recycle.DocumentCycle;
 import com.service.taskdoc.service.network.restful.service.DocumentService;
 import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
@@ -99,7 +100,7 @@ public class MyElements extends Fragment implements DocumentCycle.ClickListener 
 
     @Override
     public void fileClick(DocumentVO vo) {
-
+        new FileDownLoadServiceDialog(getContext(), vo);
     }
 
     @Override

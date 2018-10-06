@@ -22,14 +22,15 @@ import android.widget.Spinner;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.service.taskdoc.R;
-import com.service.taskdoc.database.business.Projects;
 import com.service.taskdoc.database.business.Tasks;
 import com.service.taskdoc.database.business.transfer.Project;
 import com.service.taskdoc.database.business.transfer.Task;
 import com.service.taskdoc.database.transfer.ChatRoomVO;
 import com.service.taskdoc.database.transfer.DecisionVO;
 import com.service.taskdoc.database.transfer.DocumentVO;
+import com.service.taskdoc.display.custom.custom.chart.ChartDataSetting;
 import com.service.taskdoc.display.custom.custom.chart.DocOnTheBarItem;
+import com.service.taskdoc.display.custom.custom.dialog.file.FileDownLoadServiceDialog;
 import com.service.taskdoc.display.custom.ganttchart.BarItem;
 import com.service.taskdoc.display.custom.ganttchart.Data;
 import com.service.taskdoc.display.custom.ganttchart.GanttChart;
@@ -55,8 +56,6 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
     private List<TaskBarItem> bars;
     private List<DocOnTheBarItem> onTheBars;
 
-    private List<TaskBarItem> searchBars;
-    private List<DocOnTheBarItem> searchOnTheBars;
 
     private LinearLayout todayFab;
     private LinearLayout searchFab;
@@ -71,15 +70,6 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
 
     private DownActionView downActionView;
 
-
-    private Paint docColor;
-    private Paint decColor;
-    private Paint chaColor;
-    private Paint bannerText;
-    private float size;
-    private float sPosition = 0.43f;
-    private float ePosition = 0.47f;
-    private float vPosition = 0.85f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,14 +86,7 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         seekBar = findViewById(R.id.hSeekbar);
         searchButton = findViewById(R.id.search_button);
 
-        docColor = new Paint();
-        decColor = new Paint();
-        chaColor = new Paint();
         bannerText = new Paint();
-
-        docColor.setColor(0xff7fff00);
-        decColor.setColor(0xfffff007);
-        chaColor.setColor(0xff007fff);
         bannerText.setColor(Color.WHITE);
 
         searchBars = new ArrayList<>();
@@ -144,15 +127,14 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         tasks.setPublicTasks(new Gson().fromJson(getIntent().getStringExtra("puTasks"), puTasks));
         tasks.setPrivateTasks(new Gson().fromJson(getIntent().getStringExtra("prTasks"), prTasks));
 
-        Type documenttype = new TypeToken<ArrayList<DocumentVO>>() {
-        }.getType();
+        Type documenttype = new TypeToken<ArrayList<DocumentVO>>() {}.getType();
         this.documents = new Gson().fromJson(getIntent().getStringExtra("documents"), documenttype);
 
-        Type decisiontype = new TypeToken<ArrayList<DocumentVO>>() {
+        Type decisiontype = new TypeToken<ArrayList<DecisionVO>>() {
         }.getType();
         this.decisions = new Gson().fromJson(getIntent().getStringExtra("decisions"), decisiontype);
 
-        Type chatroomtype = new TypeToken<ArrayList<DocumentVO>>() {
+        Type chatroomtype = new TypeToken<ArrayList<ChatRoomVO>>() {
         }.getType();
         this.chatrooms = new Gson().fromJson(getIntent().getStringExtra("chatrooms"), chatroomtype);
 
@@ -161,108 +143,46 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
 
 
 
+
+
     /*
      * GanttChart Data Setting
      * */
 
+    private ChartDataSetting chartDataSetting;
+
     public void chartDataSetting() {
-        bars = new ArrayList<>();
-        onTheBars = new ArrayList<>();
 
-        if (tasks.getPublicTasks().size() == 0) {
-            // 개인업무 리스트에서 호출할 경우
-            int tcode = 0;
-            for (Task t : tasks.getPrivateTasks()) {
-                if (tcode != t.getReftcode()) {
-                    bars.add(new TaskBarItem(true)); // 구분자
-                    tcode = t.getReftcode();
-                }
-                bars.add(new TaskBarItem(t));
+        chartDataSetting = new ChartDataSetting();
+        chartDataSetting.setProject(project)
+                .setTasks(tasks)
+                .setDocuments(documents)
+                .setDecisions(decisions)
+                .setChatrooms(chatrooms)
+                .init();
+
+        chartDataSetting.setDataSettingListener(new ChartDataSetting.DataSettingListener() {
+            @Override
+            public void data(List<TaskBarItem> barList, List<DocOnTheBarItem> onTheBarItemList) {
+
+                bars = barList;
+                onTheBars = onTheBarItemList;
+
+                Data data = new Data();
+                data.setBars(bars);
+                ganttChart.setData(data);
             }
-        } else {
-            // 공용업무 리스트에서 호출할 경우
-            for (Task t : tasks.getPublicTasks()) {
-                if (t.getSdate() == null) continue;
-                if (t.getCode() == t.getRefference()) {
-                    bars.add(new TaskBarItem(true)); // 구분자
-                }
 
-                TaskBarItem item = new TaskBarItem(t);
+            @Override
+            public void color(Paint docColor, Paint decColor, Paint chaColor) {
 
-                setDocItem(item); // 자료 추가
-
-                if (project.getPpermission().equals(Projects.MEMBER)) {
-                    item.setClickable(false);   // 권한
-                }
-
-                bars.add(item);
-
-                for (Task tt : tasks.getPrivateTasks()) {
-                    if (t.getCode() == tt.getReftcode()) {
-                        bars.add(new TaskBarItem(tt));
-                    }
-                }
             }
-            arrowHierarchy(); // 계층 화살표
-        }
+        });
 
-        Data data = new Data();
-        data.setBars(bars);
-        ganttChart.setData(data);
     }
 
-    public void setDocItem(TaskBarItem item) {
-        if (documents != null) {
-            for (DocumentVO vo : this.documents) {
-                if (item.getTask().getCode() == vo.getTcode()) {
-                    DocOnTheBarItem docOnBarItem = new DocOnTheBarItem(vo);
-                    docOnBarItem.setPaint(docColor);
-                    item.addOnTheBarDraws(docOnBarItem);
-                    onTheBars.add(docOnBarItem);
-                }
-            }
-        }
 
-        if (decisions != null) {
-            for (DecisionVO vo : this.decisions) {
-                if (item.getTask().getCode() == vo.getTcode()) {
-                    DocOnTheBarItem docOnBarItem = new DocOnTheBarItem(vo);
-                    docOnBarItem.setPaint(decColor);
-                    item.addOnTheBarDraws(docOnBarItem);
-                    onTheBars.add(docOnBarItem);
-                }
-            }
-        }
 
-        if (chatrooms != null) {
-            for (ChatRoomVO vo : this.chatrooms) {
-                if (item.getTask().getCode() == vo.getTcode()) {
-                    DocOnTheBarItem docOnBarItem = new DocOnTheBarItem(vo);
-                    docOnBarItem.setPaint(chaColor);
-                    item.addOnTheBarDraws(docOnBarItem);
-                    onTheBars.add(docOnBarItem);
-                }
-            }
-        }
-    }
-
-    public void arrowHierarchy() {
-        for (int i = 0; i < bars.size(); i++) {
-            TaskBarItem parentsItem = bars.get(i);
-            if (parentsItem.isDivision()) continue;
-
-            for (int j = 0; j < bars.size(); j++) {
-                TaskBarItem childItem = bars.get(j);
-                if (childItem == parentsItem || childItem.isDivision()) continue;
-
-                if (childItem.getTask().getReftcode() == 0 && parentsItem.getTask().getCode() == childItem.getTask().getRefference()
-                        || childItem.getTask().getReftcode() != 0 && parentsItem.getTask().getCode() == childItem.getTask().getReftcode()) {
-                    parentsItem.addArrowList(j);
-                    childItem.setDownDepth(parentsItem.getDepthArrow() - 1);
-                }
-            }
-        }
-    }
 
 
 
@@ -400,13 +320,13 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
 
             switch (item.getDocType()) {
                 case DocOnTheBarItem.DOCUMENT:
-                    list.add("파일 : " + item.getDocumentVO().getDmtitle());
+                    list.add("파일 :" + item.getDocumentVO().getDmtitle());
                     break;
                 case DocOnTheBarItem.DECISION:
-                    list.add("투표 : " + item.getDecisionVO().getDstitle());
+                    list.add("투표 :" + item.getDecisionVO().getDstitle());
                     break;
                 case DocOnTheBarItem.CHATROOM:
-                    list.add("회의 : " + item.getChatRoomVO().getFctitle());
+                    list.add("회의 :" + item.getChatRoomVO().getFctitle());
                     break;
             }
         }
@@ -416,7 +336,18 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         builder.setAdapter(list, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-
+                DocOnTheBarItem item = (DocOnTheBarItem) onTheBarItemItems.get(i);
+                switch (item.getDocType()) {
+                    case DocOnTheBarItem.DOCUMENT:
+                        docClick(item.getDocumentVO());
+                        break;
+                    case DocOnTheBarItem.DECISION:
+                        decClick(item.getDecisionVO());
+                        break;
+                    case DocOnTheBarItem.CHATROOM:
+                        chaClick(item.getChatRoomVO());
+                        break;
+                }
             }
         });
         builder.setNegativeButton("취소", new DialogInterface.OnClickListener() {
@@ -428,11 +359,30 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         builder.show();
     }
 
+    public void docClick(DocumentVO vo) {
+        new FileDownLoadServiceDialog(this, vo);
+    }
+
+    public void decClick(DecisionVO vo) {
+
+    }
+
+    public void chaClick(ChatRoomVO vo) {
+
+    }
+
+
 
 
     /*
      * GanttChart Background Custom Draw
      * */
+
+    private Paint bannerText;
+    private float size;
+    private float sPosition = 0.43f;
+    private float ePosition = 0.47f;
+    private float vPosition = 0.85f;
 
     @Override
     public void drawBack(Canvas canvas) {
@@ -440,7 +390,7 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
     }
 
     @Override
-    public void drawFront(Canvas canvas){
+    public void drawFront(Canvas canvas) {
         if (ganttChart.getIntervalWidth() > GanttChart.CHANGEMODE) {
 
             if (size == 0) {
@@ -448,24 +398,29 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
                 bannerText.setTextSize(size);
             }
             canvas.drawRect(ganttChart.getWidth() * sPosition, ganttChart.getHeight() * vPosition,
-                    ganttChart.getWidth() * ePosition, ganttChart.getHeight() * vPosition + size, docColor);
+                    ganttChart.getWidth() * ePosition, ganttChart.getHeight() * vPosition + size, chartDataSetting.getDocColor());
             canvas.drawText("파일", ganttChart.getWidth() * ePosition, ganttChart.getHeight() * vPosition + size, bannerText);
 
             canvas.drawRect(ganttChart.getWidth() * sPosition, ganttChart.getHeight() * vPosition + size,
-                    ganttChart.getWidth() * ePosition, ganttChart.getHeight() * vPosition + size * 2, decColor);
+                    ganttChart.getWidth() * ePosition, ganttChart.getHeight() * vPosition + size * 2, chartDataSetting.getDecColor());
             canvas.drawText("투표", ganttChart.getWidth() * ePosition, ganttChart.getHeight() * vPosition + size * 2, bannerText);
 
             canvas.drawRect(ganttChart.getWidth() * sPosition, ganttChart.getHeight() * vPosition + size * 2,
-                    ganttChart.getWidth() * ePosition, ganttChart.getHeight() * vPosition + size * 3, chaColor);
+                    ganttChart.getWidth() * ePosition, ganttChart.getHeight() * vPosition + size * 3, chartDataSetting.getChaColor());
             canvas.drawText("회의", ganttChart.getWidth() * ePosition, ganttChart.getHeight() * vPosition + size * 3, bannerText);
         }
     }
 
 
 
+
+
     /*
      * Input Search Listener
      * */
+
+    private List<TaskBarItem> searchBars;
+    private List<DocOnTheBarItem> searchOnTheBars;
 
     @Override
     public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -483,16 +438,19 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
     }
 
 
+
+
     /*
      * Search Button Click Event
      * */
 
+
     @Override
     public void onClick(View view) {
-      findItemHighLight();
+        findItemHighLight();
     }
 
-    public void findItemHighLight(){
+    public void findItemHighLight() {
         if (searchBars.size() > 0) {
             TaskBarItem item = searchBars.get(0);
             ganttChart.setFloodingX(-(searchBars.get(0).getLeft() - ganttChart.getWidth() / 3));

@@ -19,9 +19,14 @@
             android:id="@+id/contents"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/colorOpacity"
             android:enabled="false"
-            tools:text="내용" />
+            tools:text="내용"
+            android:gravity="top"
+            android:textColor="@color/colorPrimaryDark"
+            android:hint="항목을 입력 해주세요"
+            android:inputType="textCapWords"
+            android:background="@null"
+            android:scrollbars="vertical"/>
 
         <LinearLayout
             android:layout_gravity="end"

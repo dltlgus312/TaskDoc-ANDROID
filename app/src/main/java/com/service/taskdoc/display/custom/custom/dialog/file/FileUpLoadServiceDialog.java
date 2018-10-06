@@ -1,4 +1,4 @@
-package com.service.taskdoc.display.custom.custom.dialog;
+package com.service.taskdoc.display.custom.custom.dialog.file;
 
 import android.content.Context;
 import android.widget.Toast;
@@ -6,6 +6,7 @@ import android.widget.Toast;
 import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.business.transfer.Task;
 import com.service.taskdoc.database.transfer.DocumentVO;
+import com.service.taskdoc.display.custom.custom.dialog.task.DialogTaskPicker;
 import com.service.taskdoc.display.recycle.FileCycle;
 import com.service.taskdoc.service.system.support.listener.FileUpLoadDialogListener;
 

@@ -213,7 +213,7 @@ public class ChatRoom extends Fragment implements ChatRoomCycle.OnClickListener 
             @Override
             public void work(Object... objects) {
                 ((ProjectProgressActivity) getActivity()).stompBuilder.sendMessage(
-                        StompBuilder.INSERT, StompBuilder.CHATROOM, new Gson().toJson(userList)
+                        StompBuilder.INSERT, StompBuilder.CHATROOM, ""
                 );
             }
         });

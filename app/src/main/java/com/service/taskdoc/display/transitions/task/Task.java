@@ -127,6 +127,9 @@ public class Task extends Fragment implements OnBackPressedListener {
         return view;
     }
 
+
+
+
     public void fabClick() {
         if (type.equals(Tasks.PUBLIC)) {
             if (add.getVisibility() == View.INVISIBLE) {
@@ -156,18 +159,32 @@ public class Task extends Fragment implements OnBackPressedListener {
     public void changeClick() {
         Intent intent = new Intent(getContext(), GanttChartActivity.class);
 
-        intent.putExtra("puTasks", new Gson().toJson(tasks.getPublicTasks()));
         intent.putExtra("prTasks", new Gson().toJson(tasks.getPrivateTasks()));
 
         if (type.equals(Tasks.PUBLIC)) {
+            intent.putExtra("puTasks", new Gson().toJson(tasks.getPublicTasks()));
             intent.putExtra("project", new Gson().toJson(((ProjectProgressActivity) getActivity()).project));
             intent.putExtra("documents", new Gson().toJson(((ProjectProgressActivity) getActivity()).documentList));
+            intent.putExtra("decisions", new Gson().toJson(((ProjectProgressActivity) getActivity()).decisionList));
+            intent.putExtra("chatrooms", new Gson().toJson(((ProjectProgressActivity) getActivity()).chatRoomList));
         }
 
         startActivity(intent);
 
         fabClick();
     }
+
+
+
+
+
+    public void datachange(){
+
+    }
+
+
+
+
 
     @Override
     public void onBack() {

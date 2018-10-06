@@ -28,8 +28,8 @@ public interface DocumentCRUD {
     Call<List<DocumentVO>> getDocumentUserList(@Path("uid") String uid);
 
     @Multipart
-    @POST("/document/upload")
-    Call<Integer> uploadDocument(@Part MultipartBody.Part[] multipart,
+    @POST("/document/upload/doc")
+    Call<DocumentVO> uploadDocument(@Part MultipartBody.Part[] multipart,
                                  @Part("dmtitle") RequestBody dmtitle,
                                  @Part("dmcontents") RequestBody dmcontents,
                                  @Part("uid") RequestBody uid,

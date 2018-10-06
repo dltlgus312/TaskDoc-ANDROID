@@ -1,7 +1,6 @@
 package com.service.taskdoc.display.activity;
 
 import android.content.DialogInterface;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.CardView;
@@ -21,8 +20,6 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
@@ -30,23 +27,19 @@ import com.google.gson.reflect.TypeToken;
 import com.service.taskdoc.R;
 import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.business.transfer.Chating;
-import com.service.taskdoc.database.business.transfer.Task;
 import com.service.taskdoc.database.business.transfer.UserInfos;
 import com.service.taskdoc.database.transfer.ChatContentsVO;
 import com.service.taskdoc.database.transfer.ChatRoomJoinVO;
 import com.service.taskdoc.database.transfer.ChatRoomVO;
 import com.service.taskdoc.database.transfer.DecisionVO;
 import com.service.taskdoc.database.transfer.DocumentVO;
-import com.service.taskdoc.database.transfer.FileVO;
 import com.service.taskdoc.database.transfer.ProjectVO;
-import com.service.taskdoc.display.custom.custom.dialog.DialogDocParam;
-import com.service.taskdoc.display.custom.custom.dialog.DialogFilePicker;
-import com.service.taskdoc.display.custom.custom.dialog.DialogTaskPicker;
-import com.service.taskdoc.display.custom.custom.dialog.FileDownLoadServiceDialog;
-import com.service.taskdoc.display.custom.custom.dialog.FileUpLoadServiceDialog;
-import com.service.taskdoc.display.custom.ganttchart.Line;
+import com.service.taskdoc.display.custom.custom.dialog.decision.DecisionCreateDialog;
+import com.service.taskdoc.display.custom.custom.dialog.file.DialogFilePicker;
+import com.service.taskdoc.display.custom.custom.dialog.file.FileDownLoadServiceDialog;
+import com.service.taskdoc.display.custom.custom.dialog.file.FileUpLoadServiceDialog;
 import com.service.taskdoc.display.recycle.ChatingCycle;
-import com.service.taskdoc.display.recycle.FileCycle;
+import com.service.taskdoc.display.recycle.DecisionItemMakeCycle;
 import com.service.taskdoc.display.recycle.UsersCycle;
 import com.service.taskdoc.display.transitions.chatroom.Nav;
 import com.service.taskdoc.service.network.restful.service.ChatContentsService;
@@ -54,7 +47,6 @@ import com.service.taskdoc.service.network.restful.service.ChatRoomJoinService;
 import com.service.taskdoc.service.network.restful.service.ChatRoomService;
 import com.service.taskdoc.service.network.restful.service.DecisionService;
 import com.service.taskdoc.service.network.restful.service.DocumentService;
-import com.service.taskdoc.service.network.restful.service.FileService;
 import com.service.taskdoc.service.system.support.listener.FileUpLoadDialogListener;
 import com.service.taskdoc.service.system.support.service.ConvertDpPixels;
 import com.service.taskdoc.service.system.support.service.DownActionView;
@@ -62,16 +54,12 @@ import com.service.taskdoc.service.system.support.service.KeyboardManager;
 import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.StompBuilder;
 
-import java.io.File;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 
-import okhttp3.MediaType;
 import okhttp3.MultipartBody;
-import okhttp3.RequestBody;
 
 import static android.view.View.GONE;
 
@@ -165,7 +153,6 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
                 if (docAction.animationDown(docLinear)) {
                     searchAction.animationClose(searchLinear);
                     new KeyboardManager().hide(ChatingActivity.this, search);
-                    input.clearFocus();
                     input.setEnabled(true);
                     inputLinear.setBackgroundResource(R.color.colorWhite);
                 }
@@ -180,14 +167,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
                 inputLinear.setBackgroundResource(R.color.colorWhite);
             }
         });
-        input.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View view, boolean b) {
-                if (b) {
-                    docAction.animationClose(docLinear);
-                }
-            }
-        });
+
 
         file.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -305,6 +285,13 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
+        } else if(searchAction.isOpen()){
+            searchAction.animationClose(searchLinear);
+            new KeyboardManager().hide(ChatingActivity.this, search);
+            input.setEnabled(true);
+            inputLinear.setBackgroundResource(R.color.colorWhite);
+        } else if(docAction.isOpen()){
+            docAction.animationClose(docLinear);
         } else {
             stompBuilder.disconnect();
             finish();
@@ -335,12 +322,10 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         } else if (id == R.id.search) {
             if (searchAction.animationDown(searchLinear)) {
                 docAction.animationClose(docLinear);
-                search.requestFocus();
                 new KeyboardManager().show(this);
                 input.setEnabled(false);
                 inputLinear.setBackgroundResource(R.color.colorWhiteGray);
             } else {
-                search.clearFocus();
                 new KeyboardManager().hide(this, search);
                 input.setEnabled(true);
                 inputLinear.setBackgroundResource(R.color.colorWhite);
@@ -472,7 +457,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         }
 
         for (Chating vo : chatContentsList) {
-            if (vo.getChatContentsVO().getCcontents().contains(text)) {
+            if (vo.getChatContentsVO().getCcontents() != null && vo.getChatContentsVO().getCcontents().contains(text)) {
                 searchContentsList.add(vo);
             }
         }
@@ -490,6 +475,10 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         FileUpLoadDialogListener listener = new FileUpLoadDialogListener() {
             @Override
             public void formatDate(List<MultipartBody.Part> multiPartList, DocumentVO vo) {
+
+                AlertDialog dialog = new FileDownLoadServiceDialog(ChatingActivity.this).getArcDialog();
+                dialog.show();
+
                 documentService.upload(multiPartList, vo);
                 documentService.setFileLoadService(new DocumentService.FileLoadService() {
                     @Override
@@ -497,12 +486,14 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
                         Toast.makeText(ChatingActivity.this,
                                 "파일을 업로드 하였습니다.", Toast.LENGTH_SHORT).show();
                         stompBuilder.sendMessage(StompBuilder.INSERT, StompBuilder.DOCUMENT, vo);
+                        dialog.dismiss();
                     }
 
                     @Override
                     public void fail(String msg) {
                         Toast.makeText(ChatingActivity.this,
                                 "파일을 업로드 하는데 실패 하였습니다.\n실패사유:" + msg, Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
                     }
                 });
             }
@@ -516,7 +507,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
     }
 
     public void addDec() {
-
+        new DecisionCreateDialog(this).showDecisionParameter();
     }
 
     public void addFoc() {
@@ -632,6 +623,14 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
                     chatContentsVO.setUid(UserInfo.getUid());
                     chatContentsService.insert(chatContentsVO);
                 }
+                refresh();
+                break;
+            case StompBuilder.DECISION:
+                DecisionVO decVo = new Gson().fromJson(object, DecisionVO.class);
+                decisionList.add(decVo);
+
+                // 투표 업로드 후에 채팅 전송
+
                 refresh();
                 break;
         }

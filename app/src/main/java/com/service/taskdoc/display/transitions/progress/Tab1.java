@@ -13,6 +13,8 @@ import com.service.taskdoc.database.business.ChatRoomInfo;
 import com.service.taskdoc.database.business.Tasks;
 import com.service.taskdoc.database.business.transfer.UserInfos;
 import com.service.taskdoc.database.transfer.ChatContentsVO;
+import com.service.taskdoc.database.transfer.ChatRoomVO;
+import com.service.taskdoc.database.transfer.DecisionVO;
 import com.service.taskdoc.database.transfer.DocumentVO;
 import com.service.taskdoc.display.transitions.chatroom.ChatRoom;
 import com.service.taskdoc.display.transitions.project.MyInfo;
@@ -84,13 +86,46 @@ public class Tab1 extends Fragment implements TabLayout.OnTabSelectedListener {
     }
 
 
+
+
+
+    /*
+    * datachange
+    * */
     public void chatRoomViewRefresh(){
         chatRoomView.datachange();
     }
 
+    public void documentViewRefresh(){
+        documentView.datachange();
+    }
+
+    public void taskViewRefresh(){taskView.datachange(); }
+
     public void addChatContentsAlarm(String object){
         chatRoomView.addAlarm(object);
     }
+
+
+
+
+
+
+
+    /*
+    * DATA
+    * */
+
+    public Tasks getTasks() {
+        return tasks;
+    }
+
+    public void setTasks(Tasks tasks) {
+        this.tasks = tasks;
+        taskView.setTasks(this.tasks);
+        documentView.setTasks(this.tasks);
+    }
+
 
 
     public List<ChatRoomInfo> getChatRoomInfosList() {
@@ -102,15 +137,7 @@ public class Tab1 extends Fragment implements TabLayout.OnTabSelectedListener {
         chatRoomView.setList(this.chatRoomInfosList);
     }
 
-    public Tasks getTasks() {
-        return tasks;
-    }
 
-    public void setTasks(Tasks tasks) {
-        this.tasks = tasks;
-        taskView.setTasks(this.tasks);
-        documentView.setTasks(this.tasks);
-    }
 
     public List<DocumentVO> getDocumentList() {
         return documentList;

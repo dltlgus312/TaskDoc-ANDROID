@@ -158,10 +158,7 @@ public class FileService {
                     }
 
                     outputStream.write(fileReader, 0, read);
-
                     fileSizeDownloaded += read;
-
-                    Log.d(TAG, "file download: " + fileSizeDownloaded + " of " + fileSize);
                 }
 
 

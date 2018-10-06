@@ -1,4 +1,4 @@
-package com.service.taskdoc.display.custom.custom.dialog;
+package com.service.taskdoc.display.custom.custom.dialog.file;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -13,7 +13,6 @@ import android.widget.Toast;
 
 import com.service.taskdoc.database.transfer.DocumentVO;
 import com.service.taskdoc.database.transfer.FileVO;
-import com.service.taskdoc.display.activity.ChatingActivity;
 import com.service.taskdoc.service.network.restful.service.FileService;
 
 public class FileDownLoadServiceDialog implements FileService.FileLoadService {
@@ -38,6 +37,11 @@ public class FileDownLoadServiceDialog implements FileService.FileLoadService {
     TextView titleView;
     TextView totalView;
 
+    public FileDownLoadServiceDialog(Context context){
+        this.context = context;
+        init();
+    }
+
     public FileDownLoadServiceDialog(Context context, DocumentVO vo) {
         this.context = context;
         this.vo = vo;
@@ -46,10 +50,16 @@ public class FileDownLoadServiceDialog implements FileService.FileLoadService {
         dialogDocParam.setFileLoadService(this);
         dialog = dialogDocParam.show();
 
+        init();
+    }
+
+    public void init(){
+
+
 
         /*
-        * Arc Dial
-        * */
+         * Arc Dial
+         * */
         arcProgressBar = new ProgressBar(context);
 
         arcBuilder = new AlertDialog.Builder(context);
@@ -64,17 +74,17 @@ public class FileDownLoadServiceDialog implements FileService.FileLoadService {
 
 
         /*
-        * Bar Dial
-        * */
+         * Bar Dial
+         * */
         barProgressBar = new ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal);
 
         percentView = new TextView(context);
         totalView = new TextView(context);
         titleView = new TextView(context);
 
-        percentView.setTextColor(Color.WHITE);
-        totalView.setTextColor(Color.WHITE);
-        titleView.setTextColor(Color.WHITE);
+        percentView.setTextColor(Color.BLACK);
+        totalView.setTextColor(Color.BLACK);
+        titleView.setTextColor(Color.BLACK);
         titleView.setGravity(Gravity.CENTER);
 
         botLinear = new LinearLayout(context);
@@ -119,12 +129,12 @@ public class FileDownLoadServiceDialog implements FileService.FileLoadService {
             arcDialog.dismiss();
 
             barProgressBar.setMax((int) total);
-            totalView.setText(" / "+ barProgressBar.getMax());
+            totalView.setText(" / "+ barProgressBar.getMax()+" KB");
             barDialog.show();
         }
 
         barProgressBar.setProgress((int) percent);
-        percentView.setText(barProgressBar.getProgress()+"");
+        percentView.setText(barProgressBar.getProgress()+" KB");
     }
 
     @Override
@@ -136,5 +146,21 @@ public class FileDownLoadServiceDialog implements FileService.FileLoadService {
     @Override
     public void fail(String msg) {
         Toast.makeText(context, "파일 다운로드 실패. \n 실패사유: " + msg, Toast.LENGTH_SHORT).show();
+    }
+
+    public AlertDialog getArcDialog() {
+        return arcDialog;
+    }
+
+    public void setArcDialog(AlertDialog arcDialog) {
+        this.arcDialog = arcDialog;
+    }
+
+    public AlertDialog getBarDialog() {
+        return barDialog;
+    }
+
+    public void setBarDialog(AlertDialog barDialog) {
+        this.barDialog = barDialog;
     }
 }
