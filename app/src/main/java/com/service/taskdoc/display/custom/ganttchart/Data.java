@@ -268,7 +268,7 @@ public class Data {
         double d1 = date.getTime().getTime();
         double d2 = target.getTime().getTime();
 
-        diff = (int) ((d2 - d1) / (1000 * 60 * 60 * 24));
+        diff = (int) Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
 
         return diff;
     }

@@ -44,6 +44,13 @@ public class ChartDataSetting {
 
     // 일반적인 업무차트
     public ChartDataSetting() {
+        docColor = new Paint();
+        decColor = new Paint();
+        chaColor = new Paint();
+
+        docColor.setColor(0xff7fff00);
+        decColor.setColor(0xfffff007);
+        chaColor.setColor(0xff007fff);
     }
 
 
@@ -51,14 +58,6 @@ public class ChartDataSetting {
     private int pcode;
     public ChartDataSetting(int pcode){
         this.pcode = pcode;
-    }
-
-
-
-    public void init(){
-
-        bars = new ArrayList<>();
-        onTheBars = new ArrayList<>();
 
         docColor = new Paint();
         decColor = new Paint();
@@ -67,6 +66,11 @@ public class ChartDataSetting {
         docColor.setColor(0xff7fff00);
         decColor.setColor(0xfffff007);
         chaColor.setColor(0xff007fff);
+    }
+
+
+
+    public void init(){
 
         bars = new ArrayList<>();
         onTheBars = new ArrayList<>();
@@ -113,7 +117,6 @@ public class ChartDataSetting {
 
         if (dataSettingListener != null){
             dataSettingListener.data(bars, onTheBars);
-            dataSettingListener.color(docColor, decColor, chaColor);
         }
     }
 
@@ -262,12 +265,10 @@ public class ChartDataSetting {
         this.dataSettingListener = dataSettingListener;
         if (bars != null && bars.size() > 0){
             dataSettingListener.data(bars, onTheBars);
-            dataSettingListener.color(docColor, decColor, chaColor);
         }
     }
 
     public interface DataSettingListener{
         void data(List<TaskBarItem> bars, List<DocOnTheBarItem> onTheBarItems);
-        void color(Paint docColor, Paint decColor, Paint chaColor);
     }
 }

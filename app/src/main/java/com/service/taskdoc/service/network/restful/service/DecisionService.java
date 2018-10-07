@@ -23,6 +23,8 @@ public class DecisionService {
     private int crcode;
     private List<DecisionVO> decisionList;
 
+    private InsertListener insertListener;
+
     public DecisionService(int crcode) {
         this.crcode = crcode;
         service = RequestBuilder.createService(DecisionCRUD.class);
@@ -35,6 +37,18 @@ public class DecisionService {
     public void work(NetworkSuccessWork networkSuccessWork) {
         this.networkSuccessWork = networkSuccessWork;
     }
+
+    public InsertListener getInsertListener() {
+        return insertListener;
+    }
+
+    public void setInsertListener(InsertListener insertListener) {
+        this.insertListener = insertListener;
+    }
+
+
+
+
 
     public void taskList(int tcode) {
         Call<List<DecisionVO>> request = service.getTaskList(tcode);
@@ -74,18 +88,17 @@ public class DecisionService {
     }
 
     public void insert(DecisionVO vo) {
-        Call<Integer> request = service.createDecision(vo);
-        request.enqueue(new Callback<Integer>() {
+        Call<DecisionVO> request = service.createDecision(vo);
+        request.enqueue(new Callback<DecisionVO>() {
             @Override
-            public void onResponse(Call<Integer> call, Response<Integer> response) {
-                int result = response.body();
-                if (result != -1) {
-                    networkSuccessWork.work(result);
+            public void onResponse(Call<DecisionVO> call, Response<DecisionVO> response) {
+                if (response.body() != null) {
+                    if (insertListener != null) insertListener.success(response.body());
                 }
             }
 
             @Override
-            public void onFailure(Call<Integer> call, Throwable t) {
+            public void onFailure(Call<DecisionVO> call, Throwable t) {
                 Log.d(TAG, t.getMessage());
             }
         });
@@ -96,9 +109,8 @@ public class DecisionService {
         request.enqueue(new Callback<Integer>() {
             @Override
             public void onResponse(Call<Integer> call, Response<Integer> response) {
-                int result = response.body();
-                if (result == 1) {
-                    networkSuccessWork.work(result);
+                if (response.body() == 1) {
+                    networkSuccessWork.work();
                 }
             }
 
@@ -125,6 +137,10 @@ public class DecisionService {
                 Log.d(TAG, t.getMessage());
             }
         });
+    }
+
+    public interface InsertListener{
+        void success(DecisionVO vo);
     }
 
 }

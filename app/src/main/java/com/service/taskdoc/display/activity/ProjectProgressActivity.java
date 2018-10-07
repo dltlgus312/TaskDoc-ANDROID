@@ -174,11 +174,10 @@ public class ProjectProgressActivity extends AppCompatActivity
     }
 
 
-
     /*
-    * Refresh
-    * */
-    public void refreshChatRoom(){
+     * Refresh
+     * */
+    public void refreshChatRoom() {
         chatRoomInfoList.clear();
 
         ChatRoomJoinVO chatRoomJoinVO = new ChatRoomJoinVO();
@@ -194,7 +193,7 @@ public class ProjectProgressActivity extends AppCompatActivity
         });
     }
 
-    public void refreshNotice(){
+    public void refreshNotice() {
         noticeList.clear();
 
         noticeService.list();
@@ -205,7 +204,7 @@ public class ProjectProgressActivity extends AppCompatActivity
         });
     }
 
-    public void refreshTask(){
+    public void refreshTask() {
         tasks.getPrivateTasks().clear();
         tasks.getPublicTasks().clear();
 
@@ -217,7 +216,7 @@ public class ProjectProgressActivity extends AppCompatActivity
         });
     }
 
-    public void refreshProjectJoin(){
+    public void refreshProjectJoin() {
         userInfoList.clear();
 
         projectJoinService.selectProjectJoinUsers(project.getPcode());
@@ -229,7 +228,7 @@ public class ProjectProgressActivity extends AppCompatActivity
         });
     }
 
-    public void refreshDocument(){
+    public void refreshDocument() {
         documentList.clear();
 
         documentService.roomList();
@@ -241,17 +240,18 @@ public class ProjectProgressActivity extends AppCompatActivity
         });
     }
 
-    public void refreshDecision(){
+    public void refreshDecision() {
         decisionList.clear();
 
         decisionService.roomList();
         decisionService.work(new NetworkSuccessWork() {
             @Override
-            public void work(Object... objects) { }
+            public void work(Object... objects) {
+            }
         });
     }
 
-    public void refreshFocusRoom(){
+    public void refreshFocusRoom() {
         chatRoomList.clear();
 
         chatRoomService.roomList();
@@ -264,10 +264,9 @@ public class ProjectProgressActivity extends AppCompatActivity
     }
 
 
-
     /*
-    * Colaboration
-    * */
+     * Colaboration
+     * */
     public void findUser() {
         EditText input = new EditText(this);
         input.setSingleLine();
@@ -356,6 +355,8 @@ public class ProjectProgressActivity extends AppCompatActivity
                             pvo.setPpermission(Projects.MEMBER);
                             pvo.setPinvite(0);
                             projectJoinService.insert(pvo);
+
+                            stompBuilder.sendMessage(StompBuilder.INSERT, StompBuilder.PROJECTJOIN, pvo);
                         }
                     });
                     builder.setNegativeButton("취소", new DialogInterface.OnClickListener() {
@@ -382,10 +383,9 @@ public class ProjectProgressActivity extends AppCompatActivity
     }
 
 
-
     /*
-    * BackPress Event
-    * */
+     * BackPress Event
+     * */
     @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -405,10 +405,9 @@ public class ProjectProgressActivity extends AppCompatActivity
     }
 
 
-
     /*
-    * Menu Item
-    * */
+     * Menu Item
+     * */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -455,58 +454,77 @@ public class ProjectProgressActivity extends AppCompatActivity
     }
 
 
-
     /*
-    * Stomp Listener
-    * */
+     * Stomp Listener
+     * */
     @Override
     public void topic(String msg, String type, String object) {
         // 채팅, 업무, 자료, 공지, 구성원(참여확인누를시)
 
-        switch (msg){
-            case StompBuilder.INSERT :
+        switch (msg) {
+            case StompBuilder.INSERT:
                 insertTopic(type, object);
                 break;
-            case StompBuilder.UPDATE :
+            case StompBuilder.UPDATE:
                 updateTopic(type, object);
                 break;
-            case StompBuilder.DELETE :
+            case StompBuilder.DELETE:
                 deleteTopic(type, object);
                 break;
         }
     }
 
-    public void insertTopic(String type, String object){
-        switch (type){
-            case StompBuilder.CHATROOM :
+    public void insertTopic(String type, String object) {
+        switch (type) {
+            case StompBuilder.CHATROOM:
                 if (object.equals("\"\"")) refreshChatRoom();
                 else refreshFocusRoom();
                 break;
-            case StompBuilder.PROJECTJOIN :
+            case StompBuilder.CHATROOMJOIN:
+                refreshChatRoom();
                 break;
-            case StompBuilder.CHATCONTENTS :
+            case StompBuilder.PROJECTJOIN:
+                refreshProjectJoin();
+                break;
+            case StompBuilder.CHATCONTENTS:
                 tab1.addChatContentsAlarm(object);
-            case StompBuilder.DOCUMENT :
+            case StompBuilder.DOCUMENT:
                 DocumentVO vo = new Gson().fromJson(object, DocumentVO.class);
                 if (vo.getCrcode() == chatRoomInfoList.get(0).getChatRoomVO().getCrcode())
                     refreshDocument();
                 break;
-            case StompBuilder.DECISION :
+            case StompBuilder.DECISION:
                 refreshDecision();
                 break;
         }
     }
-    public void updateTopic(String type, String object){
-        switch (type){
-            case StompBuilder.PROJECTJOIN :
+
+    public void updateTopic(String type, String object) {
+        switch (type) {
+            case StompBuilder.PROJECTJOIN:
                 refreshChatRoom();
                 refreshProjectJoin();
                 break;
+            case StompBuilder.DECISION:
+                DecisionVO decVo = new Gson().fromJson(object, DecisionVO.class);
+                if (decVo.getCrcode() != chatRoomInfoList.get(0).getChatRoomVO().getCrcode()) return;
+                for (DecisionVO vo : decisionList) {
+                    if (vo.getDscode() == decVo.getDscode()) {
+                        vo = decVo;
+                        Toast.makeText(this, "(투표) \"" + vo.getDstitle() + "\" 가 종료 되었습니다."
+                                , Toast.LENGTH_SHORT).show();
+                        break;
+                    }
+                }
+                break;
+
+
         }
     }
-    public void deleteTopic(String type, String object){
-        switch (type){
-            case StompBuilder.PROJECTJOIN :
+
+    public void deleteTopic(String type, String object) {
+        switch (type) {
+            case StompBuilder.PROJECTJOIN:
                 refreshProjectJoin();
                 break;
         }

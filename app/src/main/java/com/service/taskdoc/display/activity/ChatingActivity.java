@@ -22,32 +22,36 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.airbnb.lottie.L;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.service.taskdoc.R;
 import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.business.transfer.Chating;
+import com.service.taskdoc.database.business.transfer.Project;
 import com.service.taskdoc.database.business.transfer.UserInfos;
 import com.service.taskdoc.database.transfer.ChatContentsVO;
 import com.service.taskdoc.database.transfer.ChatRoomJoinVO;
 import com.service.taskdoc.database.transfer.ChatRoomVO;
+import com.service.taskdoc.database.transfer.DecisionItemVO;
 import com.service.taskdoc.database.transfer.DecisionVO;
 import com.service.taskdoc.database.transfer.DocumentVO;
-import com.service.taskdoc.database.transfer.ProjectVO;
+import com.service.taskdoc.database.transfer.ProjectJoinVO;
 import com.service.taskdoc.display.custom.custom.dialog.decision.DecisionCreateDialog;
+import com.service.taskdoc.display.custom.custom.dialog.decision.DecisionItemSelectDialog;
 import com.service.taskdoc.display.custom.custom.dialog.file.DialogFilePicker;
 import com.service.taskdoc.display.custom.custom.dialog.file.FileDownLoadServiceDialog;
 import com.service.taskdoc.display.custom.custom.dialog.file.FileUpLoadServiceDialog;
 import com.service.taskdoc.display.recycle.ChatingCycle;
-import com.service.taskdoc.display.recycle.DecisionItemMakeCycle;
 import com.service.taskdoc.display.recycle.UsersCycle;
 import com.service.taskdoc.display.transitions.chatroom.Nav;
 import com.service.taskdoc.service.network.restful.service.ChatContentsService;
 import com.service.taskdoc.service.network.restful.service.ChatRoomJoinService;
 import com.service.taskdoc.service.network.restful.service.ChatRoomService;
+import com.service.taskdoc.service.network.restful.service.DecisionItemService;
 import com.service.taskdoc.service.network.restful.service.DecisionService;
 import com.service.taskdoc.service.network.restful.service.DocumentService;
-import com.service.taskdoc.service.system.support.listener.FileUpLoadDialogListener;
+import com.service.taskdoc.service.network.restful.service.ProjectJoinService;
 import com.service.taskdoc.service.system.support.service.ConvertDpPixels;
 import com.service.taskdoc.service.system.support.service.DownActionView;
 import com.service.taskdoc.service.system.support.service.KeyboardManager;
@@ -65,9 +69,9 @@ import static android.view.View.GONE;
 
 public class ChatingActivity extends AppCompatActivity implements NetworkSuccessWork, TextWatcher, StompBuilder.SubscribeListener, ChatingCycle.OnClickListener {
 
-    private ProjectVO projectVO;
+    private Project project;
     private ChatRoomVO chatRoomVO;
-    private List<UserInfos> userInfoList;
+    private List<UserInfos> projectJoinUserInfo;
 
     private DownActionView docAction;
     private DownActionView searchAction;
@@ -104,6 +108,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
     private ChatRoomService focusService;
     private DecisionService decisionService;
     private ChatContentsService chatContentsService;
+    private ProjectJoinService projectJoinService;
 
     private StompBuilder stompBuilder;
 
@@ -117,11 +122,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        Type userInfoType = new TypeToken<ArrayList<UserInfos>>() {
-        }.getType();
-
-        userInfoList = new Gson().fromJson(getIntent().getStringExtra("userInfos"), userInfoType);
-        projectVO = new Gson().fromJson(getIntent().getStringExtra("projectVO"), ProjectVO.class);
+        project = new Gson().fromJson(getIntent().getStringExtra("project"), Project.class);
         chatRoomVO = new Gson().fromJson(getIntent().getStringExtra("chatRoomVO"), ChatRoomVO.class);
 
         int downDocDP = (int) ConvertDpPixels.convertDpToPixel(100, this);
@@ -210,7 +211,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         searchButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                goToPosition();
+                goToLastPosition();
             }
         });
 
@@ -231,39 +232,74 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
     }
 
     public void connetionNetwork() {
-        stompBuilder = new StompBuilder(projectVO.getPcode());
+
+        // Query Reference Data
+        int crcode = chatRoomVO.getCrcode();
+
+        projectJoinUserInfo = new ArrayList<>();
+
+        stompBuilder = new StompBuilder(project.getPcode());
         stompBuilder.connect();
         stompBuilder.setSubscribeListener(this);
 
-        int crcode = chatRoomVO.getCrcode();
 
-        ChatRoomJoinVO vo = new ChatRoomJoinVO();
-        vo.setPcode(projectVO.getPcode());
-        vo.setCrcode(chatRoomVO.getCrcode());
 
-        chatRoomJoinService = new ChatRoomJoinService();
-        chatRoomJoinService.setUserInfosList(userList);
-        chatRoomJoinService.userList(vo);
-        chatRoomJoinService.work(new NetworkSuccessWork() {
+        /*
+         * Project All Join USER
+         * */
+        // Chapter 1
+        projectJoinService = new ProjectJoinService();
+        projectJoinService.setUserInfosList(projectJoinUserInfo);
+        projectJoinService.selectProjectJoinUsers(project.getPcode());
+        projectJoinService.work(new NetworkSuccessWork() {
             @Override
             public void work(Object... objects) {
-                for (UserInfos vo : userList) {
-                    for (UserInfos v : userInfoList) {
-                        if (vo.getId().equals(v.getId())) {
-                            vo.setPermission(v.getPermission());
+
+                // Query Reference Data
+                ChatRoomJoinVO vo = new ChatRoomJoinVO();
+                vo.setPcode(project.getPcode());
+                vo.setCrcode(chatRoomVO.getCrcode());
+
+
+                /*
+                 * Chating Room Join USER
+                 * */
+                // Chapter 2
+                chatRoomJoinService = new ChatRoomJoinService();
+                chatRoomJoinService.setUserInfosList(userList);
+                chatRoomJoinService.userList(vo);
+                chatRoomJoinService.work(new NetworkSuccessWork() {
+                    @Override
+                    public void work(Object... objects) {
+                        for (UserInfos vo : userList) {
+                            for (UserInfos v : projectJoinUserInfo) {
+                                if (vo.getId().equals(v.getId())) {
+                                    vo.setPermission(v.getPermission());
+                                    break;
+                                }
+                            }
                         }
+
+
+                        /*
+                         * Chating Contents
+                         * */
+                        // Chapter 3
+                        chatContentsService = new ChatContentsService(crcode);
+                        chatContentsService.setChatContentsList(chatContentsList);
+                        chatContentsService.setUserList(userList);
+                        chatContentsService.list();
+                        chatContentsService.work(ChatingActivity.this);
                     }
-                }
-                refresh();
+                });
             }
         });
 
-        chatContentsService = new ChatContentsService(crcode);
-        chatContentsService.setChatContentsList(chatContentsList);
-        chatContentsService.setUserList(userInfoList);
-        chatContentsService.list();
-        chatContentsService.work(this);
 
+
+        /*
+         * Document Data
+         * */
         documentService = new DocumentService(crcode);
         documentService.setDocumentList(documentList);
         documentService.roomList();
@@ -283,15 +319,25 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
     @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+
         if (drawer.isDrawerOpen(GravityCompat.START)) {
+
+            // Drawer Pager Close
             drawer.closeDrawer(GravityCompat.START);
-        } else if(searchAction.isOpen()){
+
+        } else if (searchAction.isOpen()) {
+
+            // Search Linear Close
             searchAction.animationClose(searchLinear);
             new KeyboardManager().hide(ChatingActivity.this, search);
             input.setEnabled(true);
             inputLinear.setBackgroundResource(R.color.colorWhite);
-        } else if(docAction.isOpen()){
+
+        } else if (docAction.isOpen()) {
+
+            // Add Doc Linear Close
             docAction.animationClose(docLinear);
+
         } else {
             stompBuilder.disconnect();
             finish();
@@ -345,7 +391,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
         List<UserInfos> list = new ArrayList<>();
-        list.addAll(userInfoList);
+        list.addAll(projectJoinUserInfo);
 
         Iterator<UserInfos> it = list.iterator();
         while (it.hasNext()) {
@@ -404,7 +450,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
 
         ChatRoomJoinVO vo = new ChatRoomJoinVO();
 
-        vo.setPcode(projectVO.getPcode());
+        vo.setPcode(project.getPcode());
         vo.setCrcode(chatRoomVO.getCrcode());
         vo.setUid(userInfos.getId());
 
@@ -412,7 +458,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         stompBuilder.sendMessage(StompBuilder.INSERT, StompBuilder.CHATROOMJOIN, vo);
     }
 
-    public void goToPosition() {
+    public void goToLastPosition() {
         if (searchContentsList.size() > 0) {
             recyclerView.scrollToPosition(chatContentsList.indexOf(searchContentsList.get(searchContentsList.size() - 1)));
             searchContentsList.remove(searchContentsList.size() - 1);
@@ -461,7 +507,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
                 searchContentsList.add(vo);
             }
         }
-        goToPosition();
+        goToLastPosition();
     }
 
 
@@ -472,7 +518,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
      * */
 
     public void addDoc() {
-        FileUpLoadDialogListener listener = new FileUpLoadDialogListener() {
+        FileUpLoadServiceDialog.FileUpLoadDialogListener listener = new FileUpLoadServiceDialog.FileUpLoadDialogListener() {
             @Override
             public void formatDate(List<MultipartBody.Part> multiPartList, DocumentVO vo) {
 
@@ -487,6 +533,15 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
                                 "파일을 업로드 하였습니다.", Toast.LENGTH_SHORT).show();
                         stompBuilder.sendMessage(StompBuilder.INSERT, StompBuilder.DOCUMENT, vo);
                         dialog.dismiss();
+
+
+                        // 채팅 전송
+                        ChatContentsVO chatContentsVO = new ChatContentsVO();
+                        chatContentsVO.setCrcode(chatRoomVO.getCrcode());
+                        chatContentsVO.setDmcode(vo.getDmcode());
+                        chatContentsVO.setCcontents(vo.getDmtitle());
+                        chatContentsVO.setUid(UserInfo.getUid());
+                        chatContentsService.insert(chatContentsVO);
                     }
 
                     @Override
@@ -500,14 +555,53 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         };
 
         new FileUpLoadServiceDialog(this)
-                .setPcode(projectVO.getPcode())
+                .setPcode(project.getPcode())
                 .setCrcode(chatRoomVO.getCrcode())
+                .setCrmode(chatRoomVO.getCrmode())
                 .setFileUpLoadDialogListener(listener)
                 .docUploadProcess();
     }
 
     public void addDec() {
-        new DecisionCreateDialog(this).showDecisionParameter();
+        DecisionCreateDialog.DecisionCreateListener listener
+                = new DecisionCreateDialog.DecisionCreateListener() {
+            @Override
+            public void getParameter(DecisionVO vo, List<DecisionItemVO> vos) {
+                decisionService.insert(vo);
+                decisionService.setInsertListener(new DecisionService.InsertListener() {
+                    @Override
+                    public void success(DecisionVO vo) {
+                        for (DecisionItemVO v : vos)
+                            v.setDscode(vo.getDscode());
+
+                        DecisionItemService decisionItemService = new DecisionItemService();
+                        decisionItemService.insert(vos);
+                        decisionItemService.work(new NetworkSuccessWork() {
+                            @Override
+                            public void work(Object... objects) {
+                                stompBuilder.sendMessage(StompBuilder.INSERT, StompBuilder.DECISION, vo);
+
+                                // 채팅 전송
+                                ChatContentsVO chatContentsVO = new ChatContentsVO();
+                                chatContentsVO.setCrcode(chatRoomVO.getCrcode());
+                                chatContentsVO.setDscode(vo.getDscode());
+                                chatContentsVO.setCcontents(vo.getDstitle());
+                                chatContentsVO.setUid(UserInfo.getUid());
+                                chatContentsService.insert(chatContentsVO);
+                            }
+                        });
+                    }
+                });
+            }
+        };
+
+        new DecisionCreateDialog(this)
+                .setDecisionCreateListener(listener)
+                .setPcode(project.getPcode())
+                .setCrcode(chatRoomVO.getCrcode())
+                .setCrmode(chatRoomVO.getCrmode())
+                .showDecisionParameter();
+
     }
 
     public void addFoc() {
@@ -527,14 +621,26 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
     }
 
     @Override
+    public void onDecClick(View view, DecisionVO vo) {
+        DecisionItemSelectDialog.DecisionEventListener listener
+                = new DecisionItemSelectDialog.DecisionEventListener() {
+            @Override
+            public void closeClick() {
+                stompBuilder.sendMessage(StompBuilder.UPDATE, StompBuilder.DECISION, vo);
+            }
+        };
+        new DecisionItemSelectDialog(this, vo)
+                .setCrmode(chatRoomVO.getCrmode())
+                .setPermision(project.getPpermission())
+                .setDecisionEventListener(listener)
+                .showList();
+    }
+
+    @Override
     public void onChaClick(View view, ChatRoomVO vo) {
 
     }
 
-    @Override
-    public void onDecClick(View view, DecisionVO vo) {
-
-    }
 
 
 
@@ -566,8 +672,6 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
     }
 
 
-
-
     /*
      * Stomp Subscribe
      * */
@@ -586,13 +690,17 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         }
     }
 
-    private void insertTopic(String type, String object){
+    private void insertTopic(String type, String object) {
         switch (type) {
+            case StompBuilder.PROJECTJOIN:
+                projectJoinService.selectProjectJoinUsers(project.getPcode());
+                projectJoinService.work(null);
+                break;
             case StompBuilder.CHATCONTENTS:
                 ChatContentsVO contentsVo = new Gson().fromJson(object, ChatContentsVO.class);
                 Chating c = new Chating();
                 c.setChatContentsVO(contentsVo);
-                for (UserInfos u : userInfoList) {
+                for (UserInfos u : userList) {
                     if (contentsVo.getUid().equals(u.getId())) {
                         c.setUserInfos(u);
                     }
@@ -602,45 +710,69 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
                 break;
             case StompBuilder.CHATROOMJOIN:
                 ChatRoomJoinVO joinVo = new Gson().fromJson(object, ChatRoomJoinVO.class);
-                userList.clear();
 
-                ChatRoomJoinVO vo = new ChatRoomJoinVO();
-                vo.setPcode(projectVO.getPcode());
-                vo.setCrcode(chatRoomVO.getCrcode());
-
-                chatRoomJoinService.userList(vo);
-                Toast.makeText(this, "\"" + joinVo.getUid() + "\"" + " 님을 추가 하셨습니다.", Toast.LENGTH_SHORT).show();
+                for (UserInfos user : projectJoinUserInfo) {
+                    if (user.getId().equals(joinVo.getUid())) {
+                        userList.add(user);
+                        Toast.makeText(this, "\"" + user.getName() + "\"" +
+                                " 님을 채팅방에 추가 하셨습니다.", Toast.LENGTH_SHORT).show();
+                        refresh();
+                        break;
+                    }
+                }
                 break;
             case StompBuilder.DOCUMENT:
                 DocumentVO docVo = new Gson().fromJson(object, DocumentVO.class);
                 documentList.add(docVo);
-
-                // 파일 업로드 후에 채팅 전송
-                if (docVo.getUid().equals(UserInfo.getUid())) {
-                    ChatContentsVO chatContentsVO = new ChatContentsVO();
-                    chatContentsVO.setCrcode(chatRoomVO.getCrcode());
-                    chatContentsVO.setDmcode(docVo.getDmcode());
-                    chatContentsVO.setUid(UserInfo.getUid());
-                    chatContentsService.insert(chatContentsVO);
-                }
                 refresh();
                 break;
             case StompBuilder.DECISION:
                 DecisionVO decVo = new Gson().fromJson(object, DecisionVO.class);
                 decisionList.add(decVo);
-
-                // 투표 업로드 후에 채팅 전송
-
                 refresh();
                 break;
         }
     }
 
-    private void updateTopic(String type, String object){
+    private void updateTopic(String type, String object) {
+        switch (type) {
+            case StompBuilder.DECISION:
+                DecisionVO decVo = new Gson().fromJson(object, DecisionVO.class);
+                if (decVo.getCrcode() != chatRoomVO.getCrcode()) return;
+                for (DecisionVO vo : decisionList) {
+                    if (vo.getDscode() == decVo.getDscode()) {
+                        vo.setDsclose(decVo.getDsclose());
+                        Toast.makeText(this, "(투표) \"" + vo.getDstitle() + "\" 가 종료 되었습니다."
+                                , Toast.LENGTH_SHORT).show();
+                        refresh();
+                        break;
+                    }
+                }
+                for (Chating chat : chatContentsList) {
+                    if (chat.getChatContentsVO().getDscode() == decVo.getDscode()) {
+                        recyclerView.scrollToPosition(chatContentsList.indexOf(chat));
+                        break;
+                    }
+                }
+                break;
+            case StompBuilder.PROJECTJOIN :
+                ProjectJoinVO projectJoinVO = new Gson().fromJson(object, ProjectJoinVO.class);
 
+                if (chatRoomVO.getCrmode() != 1) return;
+                for (UserInfos user : projectJoinUserInfo){
+                    if (projectJoinVO.getUid().equals(user.getId())){
+                        userList.add(user);
+                        refresh();
+                        Toast.makeText(this, "\"" + user.getName() + "\" 님이 프로젝트에 참가 하였습니다."
+                                , Toast.LENGTH_SHORT).show();
+                        break;
+                    }
+                }
+                break;
+        }
     }
 
-    private void deleteTopic(String type, String object){
+    private void deleteTopic(String type, String object) {
 
     }
 }

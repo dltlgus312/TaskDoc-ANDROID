@@ -1,6 +1,7 @@
 package com.service.taskdoc.display.custom.ganttchart;
 
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 
 import java.util.Calendar;
@@ -14,10 +15,23 @@ public abstract class OnTheBarItem {
 
     private boolean clickable = true;
 
+
+    private final int HIGHLIGHTCOUNT = 100;
+
+    private int count;
+
+    private Paint highLightColor;
+
+
     public OnTheBarItem(){
         sdate = Calendar.getInstance();
         edate = Calendar.getInstance();
+
+        highLightColor = new Paint();
+        highLightColor.setColor(Color.CYAN);
     }
+
+
 
     void draw(float left, float top, float right, float bottom, Canvas canvas){
         setdate(sdate, edate);
@@ -27,6 +41,10 @@ public abstract class OnTheBarItem {
         this.right = right;
         this.bottom = bottom;
 
+        if (0<count){
+            canvas.drawRect(left, top, right, bottom, highLightColor);
+            count--;
+        }
         drawItem(left, top, right, bottom, canvas);
     }
 
@@ -39,9 +57,13 @@ public abstract class OnTheBarItem {
     }
 
 
+
+
+
     protected abstract void setdate(Calendar sdate, Calendar edate);
 
     protected abstract void drawItem(float left, float top, float right, float bottom, Canvas canvas);
+
 
 
 
@@ -67,5 +89,41 @@ public abstract class OnTheBarItem {
 
     public void setClickable(boolean clickable) {
         this.clickable = clickable;
+    }
+
+    public float getLeft() {
+        return left;
+    }
+
+    public void setLeft(float left) {
+        this.left = left;
+    }
+
+    public float getTop() {
+        return top;
+    }
+
+    public void setTop(float top) {
+        this.top = top;
+    }
+
+    public float getRight() {
+        return right;
+    }
+
+    public void setRight(float right) {
+        this.right = right;
+    }
+
+    public float getBottom() {
+        return bottom;
+    }
+
+    public void setBottom(float bottom) {
+        this.bottom = bottom;
+    }
+
+    public void setHighlightCount() {
+        this.count = HIGHLIGHTCOUNT;
     }
 }

@@ -7,6 +7,7 @@ import com.service.taskdoc.service.network.restful.crud.VoterCRUD;
 import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.RequestBuilder;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,8 @@ public class VoterService {
     private NetworkSuccessWork networkSuccessWork;
     private VoterCRUD service;
 
+    private List<List<VoterVO>> list;
+
     public VoterService() {
         service = RequestBuilder.createService(VoterCRUD.class);
     }
@@ -30,13 +33,23 @@ public class VoterService {
         this.networkSuccessWork = networkSuccessWork;
     }
 
+    public List<List<VoterVO>> getList() {
+        return list;
+    }
+
+    public void setList(List<List<VoterVO>> list) {
+        this.list = list;
+    }
+
+
+
     public void list(int dsicode) {
         Call<List<VoterVO>> request = service.getList(dsicode);
         request.enqueue(new Callback<List<VoterVO>>() {
             @Override
             public void onResponse(Call<List<VoterVO>> call, Response<List<VoterVO>> response) {
-
                 if (response.body().size() > 0) {
+                    list.add(response.body());
                     networkSuccessWork.work();
                 }
             }

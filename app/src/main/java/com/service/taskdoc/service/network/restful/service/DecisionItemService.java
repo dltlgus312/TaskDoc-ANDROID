@@ -20,6 +20,8 @@ public class DecisionItemService {
     private NetworkSuccessWork networkSuccessWork;
     private DecisionItemCRUD service;
 
+    private List<DecisionItemVO> list;
+
     public DecisionItemService() {
         service = RequestBuilder.createService(DecisionItemCRUD.class);
     }
@@ -28,12 +30,28 @@ public class DecisionItemService {
         this.networkSuccessWork = networkSuccessWork;
     }
 
+    public List<DecisionItemVO> getList() {
+        return list;
+    }
+
+    public void setList(List<DecisionItemVO> list) {
+        this.list = list;
+    }
+
+
+
+
+
+
+
+
     public void list(int dscode) {
         Call<List<DecisionItemVO>> request = service.getItemList(dscode);
         request.enqueue(new Callback<List<DecisionItemVO>>() {
             @Override
             public void onResponse(Call<List<DecisionItemVO>> call, Response<List<DecisionItemVO>> response) {
-                if (response.body().size() > 0) {
+                if (response.body().size() > 0 && list != null && networkSuccessWork != null) {
+                    list.addAll(response.body());
                     networkSuccessWork.work();
                 }
             }
@@ -45,12 +63,12 @@ public class DecisionItemService {
         });
     }
 
-    public void insert(List<DecisionItemVO> vo) {
-        Call<List<DecisionItemVO>> request = service.insertItem(vo);
+    public void insert(List<DecisionItemVO> vos) {
+        Call<List<DecisionItemVO>> request = service.insertItem(vos);
         request.enqueue(new Callback<List<DecisionItemVO>>() {
             @Override
             public void onResponse(Call<List<DecisionItemVO>> call, Response<List<DecisionItemVO>> response) {
-                if (response.body().size() > 0)
+                if (response.body() != null && response.body().size() > 0)
                     networkSuccessWork.work();
             }
 

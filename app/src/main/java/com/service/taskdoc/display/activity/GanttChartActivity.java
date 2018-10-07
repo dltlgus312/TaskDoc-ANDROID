@@ -18,24 +18,31 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.service.taskdoc.R;
+import com.service.taskdoc.database.business.ChatRoomInfo;
 import com.service.taskdoc.database.business.Tasks;
 import com.service.taskdoc.database.business.transfer.Project;
 import com.service.taskdoc.database.business.transfer.Task;
 import com.service.taskdoc.database.transfer.ChatRoomVO;
+import com.service.taskdoc.database.transfer.DecisionItemVO;
 import com.service.taskdoc.database.transfer.DecisionVO;
 import com.service.taskdoc.database.transfer.DocumentVO;
+import com.service.taskdoc.database.transfer.PublicTaskVO;
+import com.service.taskdoc.database.transfer.VoterVO;
 import com.service.taskdoc.display.custom.custom.chart.ChartDataSetting;
 import com.service.taskdoc.display.custom.custom.chart.DocOnTheBarItem;
+import com.service.taskdoc.display.custom.custom.dialog.decision.DecisionItemSelectDialog;
 import com.service.taskdoc.display.custom.custom.dialog.file.FileDownLoadServiceDialog;
 import com.service.taskdoc.display.custom.ganttchart.BarItem;
 import com.service.taskdoc.display.custom.ganttchart.Data;
 import com.service.taskdoc.display.custom.ganttchart.GanttChart;
 import com.service.taskdoc.display.custom.custom.chart.TaskBarItem;
 import com.service.taskdoc.display.custom.ganttchart.OnTheBarItem;
+import com.service.taskdoc.service.system.support.StompBuilder;
 import com.service.taskdoc.service.system.support.service.ConvertDpPixels;
 import com.service.taskdoc.service.system.support.service.DownActionView;
 
@@ -43,9 +50,11 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GanttChartActivity extends AppCompatActivity implements GanttChart.SeekBarListener, GanttChart.OnTheBarDrawClickListener, GanttChart.OnTheChartDrawListener, TextWatcher, View.OnClickListener {
+public class GanttChartActivity extends AppCompatActivity implements GanttChart.SeekBarListener, GanttChart.OnTheBarDrawClickListener, GanttChart.OnTheChartDrawListener, TextWatcher, View.OnClickListener, StompBuilder.SubscribeListener {
 
     private Project project;
+
+    private ChatRoomInfo chatRoomInfo;
 
     private Tasks tasks;
 
@@ -69,6 +78,8 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
     private SeekBar seekBar;
 
     private DownActionView downActionView;
+
+    private StompBuilder stompBuilder;
 
 
     @Override
@@ -118,6 +129,7 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
 
         // 인텐트 데이터 파싱
         this.project = new Gson().fromJson(getIntent().getStringExtra("project"), Project.class);
+        this.chatRoomInfo = new Gson().fromJson(getIntent().getStringExtra("chatroom"), ChatRoomInfo.class);
 
         tasks = new Tasks();
         Type puTasks = new TypeToken<ArrayList<Task>>() {
@@ -127,7 +139,8 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         tasks.setPublicTasks(new Gson().fromJson(getIntent().getStringExtra("puTasks"), puTasks));
         tasks.setPrivateTasks(new Gson().fromJson(getIntent().getStringExtra("prTasks"), prTasks));
 
-        Type documenttype = new TypeToken<ArrayList<DocumentVO>>() {}.getType();
+        Type documenttype = new TypeToken<ArrayList<DocumentVO>>() {
+        }.getType();
         this.documents = new Gson().fromJson(getIntent().getStringExtra("documents"), documenttype);
 
         Type decisiontype = new TypeToken<ArrayList<DecisionVO>>() {
@@ -138,12 +151,24 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         }.getType();
         this.chatrooms = new Gson().fromJson(getIntent().getStringExtra("chatrooms"), chatroomtype);
 
+        stompBuilder = new StompBuilder(project.getPcode());
+        stompBuilder.setSubscribeListener(this);
+        stompBuilder.connect();
+
         chartDataSetting();
     }
 
-
-
-
+    @Override
+    public void onBackPressed() {
+        if (downActionView.isOpen()) {
+            downActionView.animationClose(searchBar);
+        } else if (ganttChart.isClickedItem()) {
+            ganttChart.clickedItemClose();
+        } else{
+            stompBuilder.disconnect();
+            finish();
+        }
+    }
 
     /*
      * GanttChart Data Setting
@@ -164,17 +189,12 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         chartDataSetting.setDataSettingListener(new ChartDataSetting.DataSettingListener() {
             @Override
             public void data(List<TaskBarItem> barList, List<DocOnTheBarItem> onTheBarItemList) {
-
                 bars = barList;
                 onTheBars = onTheBarItemList;
 
                 Data data = new Data();
                 data.setBars(bars);
                 ganttChart.setData(data);
-            }
-
-            @Override
-            public void color(Paint docColor, Paint decColor, Paint chaColor) {
 
             }
         });
@@ -364,7 +384,18 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
     }
 
     public void decClick(DecisionVO vo) {
-
+        DecisionItemSelectDialog.DecisionEventListener listener
+                = new DecisionItemSelectDialog.DecisionEventListener() {
+            @Override
+            public void closeClick() {
+                stompBuilder.sendMessage(StompBuilder.UPDATE, StompBuilder.DECISION, vo);
+            }
+        };
+        new DecisionItemSelectDialog(this, vo)
+                .setCrmode(chatRoomInfo.getChatRoomVO().getCrmode())
+                .setPermision(project.getPpermission())
+                .setDecisionEventListener(listener)
+                .showList();
     }
 
     public void chaClick(ChatRoomVO vo) {
@@ -444,7 +475,6 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
      * Search Button Click Event
      * */
 
-
     @Override
     public void onClick(View view) {
         findItemHighLight();
@@ -453,14 +483,14 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
     public void findItemHighLight() {
         if (searchBars.size() > 0) {
             TaskBarItem item = searchBars.get(0);
-            ganttChart.setFloodingX(-(searchBars.get(0).getLeft() - ganttChart.getWidth() / 3));
-            ganttChart.setFloodingY(-(searchBars.get(0).getTop() - ganttChart.getHeight() / 3));
+            ganttChart.goToItem(item);
             searchBars.remove(item);
+            item.setHighlightCount();
         } else if (searchOnTheBars.size() > 0) {
             DocOnTheBarItem item = searchOnTheBars.get(0);
-            ganttChart.setFloodingX(-(searchBars.get(0).getLeft() - ganttChart.getWidth() / 3));
-            ganttChart.setFloodingY(-(searchBars.get(0).getTop() - ganttChart.getHeight() / 3));
+            ganttChart.goToItem(item);
             searchBars.remove(item);
+            item.setHighlightCount();
         } else searchItem();
     }
 
@@ -479,5 +509,108 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         if (searchBars.size() < 1) return;
 
         findItemHighLight();
+    }
+
+
+
+
+
+    /*
+     * Network Service
+     * */
+
+    /*
+     * Stomp Subscribe
+     * */
+    @Override
+    public void topic(String msg, String type, String object) {
+        switch (msg) {
+            case StompBuilder.INSERT:
+                insertTopic(type, object);
+                break;
+            case StompBuilder.UPDATE:
+                updateTopic(type, object);
+                break;
+            case StompBuilder.DELETE:
+                deleteTopic(type, object);
+                break;
+        }
+    }
+
+    private void insertTopic(String type, String object) {
+        switch (type) {
+            case StompBuilder.DOCUMENT:
+                DocumentVO docVo = new Gson().fromJson(object, DocumentVO.class);
+                if (docVo.getCrcode() != chatRoomInfo.getChatRoomVO().getCrcode()) return;
+
+                documents.add(docVo);
+                chartDataSetting.init();
+                Toast.makeText(this, "(파일) \"" + docVo.getDmtitle() + "\" 가 추가 되었습니다."
+                        , Toast.LENGTH_SHORT).show();
+                break;
+            case StompBuilder.DECISION:
+                DecisionVO decVo = new Gson().fromJson(object, DecisionVO.class);
+                if (decVo.getCrcode() != chatRoomInfo.getChatRoomVO().getCrcode()) return;
+
+                decisions.add(decVo);
+                chartDataSetting.init();
+                Toast.makeText(this, "(투표) \"" + decVo.getDstitle() + "\" 가 추가 되었습니다."
+                        , Toast.LENGTH_SHORT).show();
+                break;
+        }
+    }
+
+    private void updateTopic(String type, String object) {
+        switch (type) {
+            case StompBuilder.DECISION:
+                DecisionVO decVo = new Gson().fromJson(object, DecisionVO.class);
+                if (decVo.getCrcode() != chatRoomInfo.getChatRoomVO().getCrcode()) return;
+
+                DocOnTheBarItem item = findDecItem(decVo);
+                item.setDecisionVO(decVo);
+                item.setHighlightCount();
+                ganttChart.goToItem(item);
+                Toast.makeText(this, "(투표) \"" + item.getDecisionVO().getDstitle() + "\" 가 종료 되었습니다."
+                        , Toast.LENGTH_SHORT).show();
+                break;
+        }
+    }
+
+    private void deleteTopic(String type, String object) {
+
+    }
+
+
+
+    /*
+    * Item Find
+    * */
+
+    public DocOnTheBarItem findDecItem(DecisionVO vo){
+        for (DocOnTheBarItem i : onTheBars) {
+            if (i.getDecisionVO() != null && i.getDecisionVO().getDscode() == vo.getDscode()) {
+                return i;
+            }
+        }
+        return null;
+    }
+
+    public DocOnTheBarItem findDocItem(DocumentVO vo){
+        for (DocOnTheBarItem i : onTheBars) {
+            if (i.getDocumentVO() != null && i.getDocumentVO().getDmcode() == vo.getDmcode()) {
+                return i;
+            }
+        }
+        return null;
+    }
+
+
+    public DocOnTheBarItem findChaItem(ChatRoomVO vo){
+        for (DocOnTheBarItem i : onTheBars) {
+            if (i.getChatRoomVO() != null && i.getChatRoomVO().getCrcode() == vo.getCrcode()) {
+                return i;
+            }
+        }
+        return null;
     }
 }

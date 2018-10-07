@@ -63,7 +63,7 @@ public class DecisionItemMakeCycle extends RecyclerView.Adapter<DecisionItemMake
                 @Override
                 public void onClick(View view) {
                     DecisionItemVO vo = new DecisionItemVO();
-                    vo.setDsisequence(vos.size());
+                    vo.setDsisequence(vos.size()+1);
                     vos.add(vo);
                     if (addClickRePositionListener != null)
                         addClickRePositionListener.onClick();
@@ -142,6 +142,9 @@ public class DecisionItemMakeCycle extends RecyclerView.Adapter<DecisionItemMake
     }
 
 
+
+
+
     public void setModifyMode(TextView modify, TextView delete, EditText contents){
         modify.setText(SUCCESS);
         delete.setText(CANCLE);
@@ -170,12 +173,18 @@ public class DecisionItemMakeCycle extends RecyclerView.Adapter<DecisionItemMake
 
 
 
-
-
     /*
     * Creates Parameter Data
     * */
     public List<DecisionItemVO> getVos() {
+        List<DecisionItemVO> vos = new ArrayList<>();
+
+        for (DecisionItemVO vo : this.vos){
+            if (vo.getDsilist() != null && !vo.getDsilist().equals("")){
+                vos.add(vo);
+            }
+        }
+
         return vos;
     }
 
@@ -190,11 +199,6 @@ public class DecisionItemMakeCycle extends RecyclerView.Adapter<DecisionItemMake
     public void setDialog(android.support.v7.app.AlertDialog dialog) {
         this.dialog = dialog;
     }
-
-
-
-
-
 
 
 
@@ -215,10 +219,6 @@ public class DecisionItemMakeCycle extends RecyclerView.Adapter<DecisionItemMake
     public interface AddClickRePositionListener{
         void onClick();
     }
-
-
-
-
 
 
 

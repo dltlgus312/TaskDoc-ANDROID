@@ -30,6 +30,8 @@ import com.applandeo.materialcalendarview.listeners.OnSelectDateListener;
 import com.google.gson.Gson;
 import com.service.taskdoc.R;
 import com.service.taskdoc.database.business.Projects;
+import com.service.taskdoc.database.business.UserInfo;
+import com.service.taskdoc.database.transfer.ProjectJoinVO;
 import com.service.taskdoc.database.transfer.ProjectVO;
 import com.service.taskdoc.display.activity.ProjectProgressActivity;
 import com.service.taskdoc.display.recycle.ProjectCycle;
@@ -181,7 +183,14 @@ public class Project extends Fragment implements ProjectCycle.Listener, NetworkS
 
                             for (StompBuilder s : stompBuilders){
                                 if (project.getPcode() == s.getPcode()){
-                                    s.sendMessage(StompBuilder.UPDATE, StompBuilder.PROJECTJOIN, "");
+
+                                    ProjectJoinVO projectJoinVO = new ProjectJoinVO();
+                                    projectJoinVO.setPcode(project.getPcode());
+                                    projectJoinVO.setPinvite(project.getPinvite());
+                                    projectJoinVO.setPpermission(project.getPpermission());
+                                    projectJoinVO.setUid(UserInfo.getUid());
+
+                                    s.sendMessage(StompBuilder.UPDATE, StompBuilder.PROJECTJOIN, projectJoinVO);
                                 }
                             }
                         }

@@ -12,7 +12,7 @@ import java.util.List;
 
 public abstract class BarItem {
 
-    private final int startTextPosition = 20;
+    private final int startTextPosition = 50;
 
     private boolean division = false;
     private boolean barClicked = false;
@@ -46,6 +46,10 @@ public abstract class BarItem {
     private List<Integer> arrowList;
 
     private int depthArrow;
+
+    private final int HIGHLIGHTCOUNT = 100;
+
+    private int count;
 
 
     /*
@@ -113,14 +117,22 @@ public abstract class BarItem {
         percentage = (right - left) / 100f;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (0 < count) {
+                canvas.drawRoundRect(left-3, top-3, right+3, bottom+3, 10, 10, modifyArcPaint);
+                count--;
+            }
             canvas.drawRoundRect(left, top, right, bottom, 10, 10, background);
             canvas.drawRoundRect(left, top, left + percentage * percent, bottom, 10, 10, barColor);
         } else {
+            if (0 < count) {
+                canvas.drawRect(left-3, top-3, right+3, bottom+3, modifyArcPaint);
+                count--;
+            }
             canvas.drawRect(left, top, right, bottom, background);
             canvas.drawRect(left, top, left + percentage * percent, bottom, barColor);
         }
 
-        if (barClicked && onBarClickListener==null) drawModifyPercent(canvas);
+        if (barClicked && onBarClickListener == null) drawModifyPercent(canvas);
     }
 
     void drawTitle(Canvas canvas) {
@@ -150,7 +162,7 @@ public abstract class BarItem {
 
             canvas.drawArc(modifyArc, 0, 360, false, modifyArcPaint);
             canvas.drawLine(modifyArc.centerX(), top, modifyArc.centerX(), bottom, modifyArcPaint);
-        }else {
+        } else {
 
         }
     }
@@ -193,12 +205,12 @@ public abstract class BarItem {
         }
 
         if (isClickable() && x < right && x > left && y < bottom && y > top) {
-            if (onBarClickListener != null){
+            if (onBarClickListener != null) {
                 onBarClickListener.itemSelect(this);
                 textPaint.setColor(Color.GREEN);
                 barClicked = true;
                 click = true;
-            }else {
+            } else {
                 textPaint.setColor(Color.CYAN);
                 barClicked = true;
                 click = true;
@@ -426,6 +438,10 @@ public abstract class BarItem {
 
     public float getBottom() {
         return bottom;
+    }
+
+    public void setHighlightCount() {
+        this.count = HIGHLIGHTCOUNT;
     }
 
 

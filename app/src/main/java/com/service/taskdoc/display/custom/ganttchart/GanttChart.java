@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 
 import com.service.taskdoc.service.system.support.service.ConvertDpPixels;
 
+import java.util.Calendar;
 import java.util.List;
 
 public class GanttChart extends ViewGroup {
@@ -182,6 +183,8 @@ public class GanttChart extends ViewGroup {
 
     TouchListenerChart touchListenerChart;
 
+    BarItem clickedItem;
+
     void sliding() {
         if (touchListenerChart.stackX == 0 && touchListenerChart.stackY == 0) return;
 
@@ -235,7 +238,8 @@ public class GanttChart extends ViewGroup {
     }
 
     BarItem onClick(float x, float y) {
-        return data.onClick(x, y);
+        clickedItem = data.onClick(x, y);
+        return clickedItem;
     }
 
     void onLongClick(float x, float y) {
@@ -305,9 +309,23 @@ public class GanttChart extends ViewGroup {
         this.onTheChartDrawListener = onTheChartDrawListener;
     }
 
+
+
+
+
     /*
     *  Service
     * */
+
+    public void clickedItemClose(){
+        clickedItem.closeClick();
+        clickedItem = null;
+    }
+
+    public boolean isClickedItem(){
+        if (clickedItem == null) return false;
+        else return true;
+    }
 
     public void setFloodingX(float floodingX){
         this.floodingX = floodingX;
@@ -323,6 +341,21 @@ public class GanttChart extends ViewGroup {
 
     public void goToDay() {
         setFloodingX(-(data.getPositionX(data.getToDay()) - getWidth() / 2));
+    }
+
+    public void goToDay(Calendar date){
+        setFloodingX(-(this.data.getPositionX(date) - getWidth() / 2));
+    }
+
+    public void goToItem(BarItem barItem){
+        setFloodingX(-(barItem.getLeft() - getWidth() / 3));
+        setFloodingY(-(barItem.getTop() - getHeight() / 3));
+    }
+
+    public void goToItem(OnTheBarItem onTheBarItem){
+        setIntervalWidth(GanttChart.MAXWIDTH);
+        goToDay(onTheBarItem.getSdate());
+        setFloodingY(-(onTheBarItem.getTop() - getHeight() / 2));
     }
 
 

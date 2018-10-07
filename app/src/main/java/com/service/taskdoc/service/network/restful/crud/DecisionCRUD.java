@@ -22,8 +22,8 @@ public interface DecisionCRUD {
     @GET("/decision/room/{crcode}")
     Call<List<DecisionVO>> getChatList(@Path("crcode") int crcode);
 
-    @POST("/decision")
-    Call<Integer> createDecision(@Body DecisionVO decisionVO);
+    @POST("/decision/dec")
+    Call<DecisionVO> createDecision(@Body DecisionVO decisionVO);
     
     @PUT("/decision") // Document의 제목이나 내용 변경
     Call<Integer> updateDecision(@Body DecisionVO decisionVO);

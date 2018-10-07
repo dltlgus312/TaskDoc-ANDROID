@@ -163,7 +163,9 @@ public class Task extends Fragment implements OnBackPressedListener {
 
         if (type.equals(Tasks.PUBLIC)) {
             intent.putExtra("puTasks", new Gson().toJson(tasks.getPublicTasks()));
+
             intent.putExtra("project", new Gson().toJson(((ProjectProgressActivity) getActivity()).project));
+            intent.putExtra("chatroom", new Gson().toJson(((ProjectProgressActivity) getActivity()).chatRoomInfoList.get(0)));
             intent.putExtra("documents", new Gson().toJson(((ProjectProgressActivity) getActivity()).documentList));
             intent.putExtra("decisions", new Gson().toJson(((ProjectProgressActivity) getActivity()).decisionList));
             intent.putExtra("chatrooms", new Gson().toJson(((ProjectProgressActivity) getActivity()).chatRoomList));

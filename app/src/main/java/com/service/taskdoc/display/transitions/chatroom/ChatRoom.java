@@ -104,8 +104,7 @@ public class ChatRoom extends Fragment implements ChatRoomCycle.OnClickListener 
         cycle.notifyDataSetChanged();
 
         Intent intent = new Intent(getContext(), ChatingActivity.class);
-        intent.putExtra("userInfos", new Gson().toJson(((ProjectProgressActivity)getActivity()).userInfoList));
-        intent.putExtra("projectVO", new Gson().toJson(((ProjectProgressActivity)getActivity()).project));
+        intent.putExtra("project", new Gson().toJson(((ProjectProgressActivity)getActivity()).project));
         intent.putExtra("chatRoomVO", new Gson().toJson(chatRoomInfo.getChatRoomVO()));
         startActivity(intent);
     }

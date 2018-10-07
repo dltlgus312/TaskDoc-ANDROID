@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import retrofit2.Call;
+import retrofit2.http.Body;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
@@ -18,8 +19,8 @@ public interface VoterCRUD {
     Call<List<VoterVO>> getList(@Path("dsicode") int dsicode);
 
     @POST("/voter")
-    Call<Integer> insert(VoterVO vo);
+    Call<Integer> insert(@Body VoterVO vo);
 
     @PUT("voter") // KEY = "oldVo" : VoterVO, "newVo" : VoterVO )
-    Call<Integer> update(Map<String, VoterVO> vo);
+    Call<Integer> update(@Body Map<String, VoterVO> vo);
 }

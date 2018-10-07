@@ -8,7 +8,6 @@ import com.service.taskdoc.database.business.transfer.Task;
 import com.service.taskdoc.database.transfer.DocumentVO;
 import com.service.taskdoc.display.custom.custom.dialog.task.DialogTaskPicker;
 import com.service.taskdoc.display.recycle.FileCycle;
-import com.service.taskdoc.service.system.support.listener.FileUpLoadDialogListener;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -36,6 +35,7 @@ public class FileUpLoadServiceDialog {
 
     private int crcode;
     private int pcode;
+    private int crmode;
 
     public int getCrcode() {
         return crcode;
@@ -55,8 +55,14 @@ public class FileUpLoadServiceDialog {
         return this;
     }
 
+    public int getCrmode() {
+        return crmode;
+    }
 
-
+    public FileUpLoadServiceDialog setCrmode(int crmode) {
+        this.crmode = crmode;
+        return this;
+    }
 
     /*
     * Event Listener
@@ -122,7 +128,7 @@ public class FileUpLoadServiceDialog {
                 title = t;
                 contents = c;
 
-                if (crcode == 1) {
+                if (crmode == 1) {
                     // 메인톡방에선 업무를 선택
                     taskFicker();
                 } else {
@@ -176,5 +182,12 @@ public class FileUpLoadServiceDialog {
 
         if (fileUpLoadDialogListener !=null) fileUpLoadDialogListener.formatDate(multiPartList, vo);
     }
+
+
+
+    public interface FileUpLoadDialogListener {
+        void formatDate(List<MultipartBody.Part> multiPartList, DocumentVO vo);
+    }
+
 
 }

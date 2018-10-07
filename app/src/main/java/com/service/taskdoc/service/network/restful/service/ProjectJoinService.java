@@ -176,6 +176,7 @@ public class ProjectJoinService {
 
 
     public void selectProjectJoinUsers(int pcode){
+        userInfosList.clear();
         Call<Map<String, Object>> request = service.getUsers(pcode);
         request.enqueue(new Callback<Map<String, Object>>() {
             @Override
@@ -208,7 +209,7 @@ public class ProjectJoinService {
                             }
                         }
                     }
-                    networkSuccessWork.work();
+                    if (networkSuccessWork != null) networkSuccessWork.work();
                 }
             }
 

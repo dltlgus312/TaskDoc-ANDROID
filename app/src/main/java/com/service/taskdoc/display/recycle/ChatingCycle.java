@@ -129,8 +129,8 @@ public class ChatingCycle extends RecyclerView.Adapter<ChatingCycle.ViewHolder> 
             for (DecisionVO dvo : decisionList){
                 if (vo.getChatContentsVO().getDscode() == dvo.getDscode()){
                     Button button = documentSettingUi(dvo.getDstitle(), "투표", contents);
-                    if (dvo.getDscode() == 1)
-                        button.setText("투표 결과 확인");
+                    if (dvo.getDsclose() == 1)
+                        button.setText("결과 확인");
                     else
                         button.setText("투표 하기");
                     button.setOnClickListener(new View.OnClickListener() {
