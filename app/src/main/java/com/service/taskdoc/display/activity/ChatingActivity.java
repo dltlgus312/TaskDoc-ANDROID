@@ -8,6 +8,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.KeyEvent;
 import android.view.View;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -22,10 +23,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
-import com.airbnb.lottie.L;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.service.taskdoc.R;
+import com.service.taskdoc.database.business.Projects;
 import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.business.transfer.Chating;
 import com.service.taskdoc.database.business.transfer.Project;
@@ -37,9 +37,11 @@ import com.service.taskdoc.database.transfer.DecisionItemVO;
 import com.service.taskdoc.database.transfer.DecisionVO;
 import com.service.taskdoc.database.transfer.DocumentVO;
 import com.service.taskdoc.database.transfer.ProjectJoinVO;
+import com.service.taskdoc.display.custom.custom.dialog.chat.FocusCreateDialog;
+import com.service.taskdoc.display.custom.custom.dialog.chat.FocusItemSelectDialog;
 import com.service.taskdoc.display.custom.custom.dialog.decision.DecisionCreateDialog;
 import com.service.taskdoc.display.custom.custom.dialog.decision.DecisionItemSelectDialog;
-import com.service.taskdoc.display.custom.custom.dialog.file.DialogFilePicker;
+import com.service.taskdoc.display.custom.custom.dialog.file.DialogDocParam;
 import com.service.taskdoc.display.custom.custom.dialog.file.FileDownLoadServiceDialog;
 import com.service.taskdoc.display.custom.custom.dialog.file.FileUpLoadServiceDialog;
 import com.service.taskdoc.display.recycle.ChatingCycle;
@@ -58,7 +60,6 @@ import com.service.taskdoc.service.system.support.service.KeyboardManager;
 import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.StompBuilder;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -67,75 +68,64 @@ import okhttp3.MultipartBody;
 
 import static android.view.View.GONE;
 
-public class ChatingActivity extends AppCompatActivity implements NetworkSuccessWork, TextWatcher, StompBuilder.SubscribeListener, ChatingCycle.OnClickListener {
+public class ChatingActivity extends AppCompatActivity implements
+        NetworkSuccessWork, StompBuilder.SubscribeListener, ChatingCycle.OnClickListener {
 
-    private Project project;
-    private ChatRoomVO chatRoomVO;
-    private List<UserInfos> projectJoinUserInfo;
 
-    private DownActionView docAction;
-    private DownActionView searchAction;
-
-    private LinearLayout searchLinear;
-    private EditText search;
-    private ImageView searchButton;
-    private ImageButton searchUp;
-
-    private RecyclerView recyclerView;
-    private ChatingCycle cycle;
-
-    private LinearLayout inputLinear;
-    private EditText input;
-    private ImageButton add;
-    private ImageButton send;
-
-    private LinearLayout docLinear;
-    private LinearLayout file;
-    private LinearLayout focus;
-    private LinearLayout decision;
-
-    private Nav navView = new Nav();
-
-    private List<UserInfos> userList = new ArrayList<>();
-    private List<DocumentVO> documentList = new ArrayList<>();
-    private List<DecisionVO> decisionList = new ArrayList<>();
-    private List<ChatRoomVO> focusList = new ArrayList<>();
-    private List<Chating> chatContentsList = new ArrayList<>();
-    private List<Chating> searchContentsList = new ArrayList<>();
-
-    private ChatRoomJoinService chatRoomJoinService;
-    private DocumentService documentService;
-    private ChatRoomService focusService;
-    private DecisionService decisionService;
-    private ChatContentsService chatContentsService;
-    private ProjectJoinService projectJoinService;
-
-    private StompBuilder stompBuilder;
-
-    private DialogFilePicker dialog;
-
+    List<UserInfos> userList = new ArrayList<>();
+    List<DocumentVO> documentList = new ArrayList<>();
+    List<DecisionVO> decisionList = new ArrayList<>();
+    List<ChatRoomVO> focusList = new ArrayList<>();
+    List<Chating> chatContentsList = new ArrayList<>();
+    List<Chating> searchContentsList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chating);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
-        project = new Gson().fromJson(getIntent().getStringExtra("project"), Project.class);
-        chatRoomVO = new Gson().fromJson(getIntent().getStringExtra("chatRoomVO"), ChatRoomVO.class);
+        viewSet();
+        drawerSet();
+        eventSet();
+        initSet();
+        netWork();
+    }
 
-        int downDocDP = (int) ConvertDpPixels.convertDpToPixel(100, this);
-        docAction = new DownActionView(downDocDP);
 
-        int downSearchDP = (int) ConvertDpPixels.convertDpToPixel(28, this);
-        searchAction = new DownActionView(downSearchDP);
 
+    /*
+     * Find View & Listener
+     * */
+
+    DownActionView docAction;
+    DownActionView searchAction;
+
+    LinearLayout searchLinear;
+    EditText search;
+    ImageView searchButton;
+    ImageButton searchUp;
+
+    RecyclerView recyclerView;
+    ChatingCycle cycle;
+
+    LinearLayout chatLinear;
+    LinearLayout inputLinear;
+    EditText input;
+    ImageButton add;
+    ImageButton send;
+
+    LinearLayout docLinear;
+    LinearLayout file;
+    LinearLayout focus;
+    LinearLayout decision;
+
+    void viewSet() {
         search = findViewById(R.id.search);
         searchButton = findViewById(R.id.search_button);
         searchLinear = findViewById(R.id.searchLinear);
         searchUp = findViewById(R.id.search_up);
         recyclerView = findViewById(R.id.recycle);
+        chatLinear = findViewById(R.id.chatLinear);
         inputLinear = findViewById(R.id.input_linear);
         input = findViewById(R.id.input);
         add = findViewById(R.id.add_doc);
@@ -147,7 +137,9 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
 
         searchLinear.setVisibility(GONE);
         docLinear.setVisibility(GONE);
+    }
 
+    void eventSet() {
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -166,6 +158,21 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
                 new KeyboardManager().hide(ChatingActivity.this, search);
                 input.setEnabled(true);
                 inputLinear.setBackgroundResource(R.color.colorWhite);
+            }
+        });
+        search.setOnKeyListener(new View.OnKeyListener() {
+
+            /*
+             * Search Contents
+             * */
+            @Override
+            public boolean onKey(View v, int keyCode, KeyEvent event) {
+                //Enter key Action
+                if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+                    new KeyboardManager().hide(ChatingActivity.this, search);
+                    return true;
+                }
+                return false;
             }
         });
 
@@ -189,18 +196,6 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
             }
         });
 
-        if (chatRoomVO.getCrmode() == 3) {
-            focus.setVisibility(GONE);
-        }
-
-        getSupportFragmentManager().beginTransaction().replace(R.id.nav_view, navView).addToBackStack(null).commit();
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.addDrawerListener(toggle);
-        toggle.syncState();
-
         send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -211,14 +206,91 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         searchButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                goToLastPosition();
+                goToSearchPosition();
             }
         });
+
+        search.addTextChangedListener(new TextWatcher() {
+            /*
+             * Search Contents
+             * */
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                searchContentsList.clear();
+                String text = search.getText().toString();
+
+                if (text.equals("") || text.equals(" ")) {
+                    recyclerView.scrollToPosition(cycle.getItemCount() - 1);
+                    return;
+                }
+
+                for (Chating vo : chatContentsList) {
+                    if (vo.getChatContentsVO().getCcontents() != null && vo.getChatContentsVO().getCcontents().contains(text)) {
+                        searchContentsList.add(vo);
+                    }
+                }
+                goToSearchPosition();
+            }
+        });
+
+    }
+
+
+
+    /*
+     * Left Drawer Pager
+     * */
+
+    Nav navView = new Nav();
+
+    void drawerSet() {
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        getSupportFragmentManager().beginTransaction().replace(R.id.nav_view, navView).addToBackStack(null).commit();
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
 
         navView.setUserList(userList);
         navView.setDocumentList(documentList);
         navView.setDecisionList(decisionList);
         navView.setFocusList(focusList);
+    }
+
+
+
+    /*
+     * Extra & Initial Setting
+     * */
+
+    public Project project;
+    public ChatRoomVO chatRoomVO;
+    public List<UserInfos> projectJoinUserInfo;
+
+    void initSet() {
+
+        projectJoinUserInfo = new ArrayList<>();
+
+        int downDocDP = (int) ConvertDpPixels.convertDpToPixel(100, this);
+        docAction = new DownActionView(downDocDP);
+
+        int downSearchDP = (int) ConvertDpPixels.convertDpToPixel(28, this);
+        searchAction = new DownActionView(downSearchDP);
+
 
         cycle = new ChatingCycle(chatContentsList, documentList, decisionList, focusList);
         cycle.setOnClickListener(this);
@@ -226,17 +298,47 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(cycle);
 
-        search.addTextChangedListener(this);
 
-        connetionNetwork();
+
+        project = new Gson().fromJson(getIntent().getStringExtra("project"), Project.class);
+        chatRoomVO = new Gson().fromJson(getIntent().getStringExtra("chatRoomVO"), ChatRoomVO.class);
+
+
+        if (project.getPpermission().equals(Projects.MEMBER) || chatRoomVO.getCrmode() != 1) {
+            focus.setVisibility(GONE);
+        }
+
+        if (chatRoomVO.getCrmode() == 3) {
+            recyclerView.setBackgroundColor(0xff000000);
+            navView.setFocusVisibleGone(true);
+            cycle.setModeFocus();
+        }
+
+        if (chatRoomVO.getCrclose() == 1) {
+            chatLinear.setVisibility(GONE);
+        }
+
     }
 
-    public void connetionNetwork() {
+
+
+    /*
+     * NetWork Init
+     * */
+
+    public StompBuilder stompBuilder;
+
+    public ChatRoomJoinService chatRoomJoinService;
+    public DocumentService documentService;
+    public ChatRoomService focusService;
+    public DecisionService decisionService;
+    public ChatContentsService chatContentsService;
+    public ProjectJoinService projectJoinService;
+
+    void netWork() {
 
         // Query Reference Data
         int crcode = chatRoomVO.getCrcode();
-
-        projectJoinUserInfo = new ArrayList<>();
 
         stompBuilder = new StompBuilder(project.getPcode());
         stompBuilder.connect();
@@ -316,6 +418,14 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         focusService.work(this);
     }
 
+
+
+
+
+    /*
+     * Service
+     * */
+
     @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -370,10 +480,12 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
                 docAction.animationClose(docLinear);
                 new KeyboardManager().show(this);
                 input.setEnabled(false);
+                search.requestFocus();
                 inputLinear.setBackgroundResource(R.color.colorWhiteGray);
             } else {
                 new KeyboardManager().hide(this, search);
                 input.setEnabled(true);
+                input.requestFocus();
                 inputLinear.setBackgroundResource(R.color.colorWhite);
             }
         }
@@ -387,7 +499,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
      * Business
      * */
 
-    public void addCollabor() {
+    void addCollabor() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
         List<UserInfos> list = new ArrayList<>();
@@ -440,7 +552,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         });
     }
 
-    public void checkUserAdd(UserInfos userInfos) {
+    void checkUserAdd(UserInfos userInfos) {
         for (UserInfos vo : userList) {
             if (vo.getId().equals(userInfos.getId())) {
                 Toast.makeText(this, "이미 추가된 사용자 입니다.", Toast.LENGTH_SHORT).show();
@@ -458,14 +570,14 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         stompBuilder.sendMessage(StompBuilder.INSERT, StompBuilder.CHATROOMJOIN, vo);
     }
 
-    public void goToLastPosition() {
+    void goToSearchPosition() {
         if (searchContentsList.size() > 0) {
             recyclerView.scrollToPosition(chatContentsList.indexOf(searchContentsList.get(searchContentsList.size() - 1)));
             searchContentsList.remove(searchContentsList.size() - 1);
         }
     }
 
-    public void refresh() {
+    void refresh() {
         if (recyclerView.isShown()) {
             cycle.notifyDataSetChanged();
             navView.notifyDataSetChanged();
@@ -479,45 +591,11 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
 
 
     /*
-     * Search Contents
-     * */
-
-    @Override
-    public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-    }
-
-    @Override
-    public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-    }
-
-    @Override
-    public void afterTextChanged(Editable editable) {
-        searchContentsList.clear();
-        String text = search.getText().toString();
-
-        if (text.equals("") || text.equals(" ")) {
-            recyclerView.scrollToPosition(cycle.getItemCount() - 1);
-            return;
-        }
-
-        for (Chating vo : chatContentsList) {
-            if (vo.getChatContentsVO().getCcontents() != null && vo.getChatContentsVO().getCcontents().contains(text)) {
-                searchContentsList.add(vo);
-            }
-        }
-        goToLastPosition();
-    }
-
-
-
-
-    /*
      * Add Document
      * */
 
-    public void addDoc() {
+    void addDoc() {
+        docAction.animationClose(docLinear);
         FileUpLoadServiceDialog.FileUpLoadDialogListener listener = new FileUpLoadServiceDialog.FileUpLoadDialogListener() {
             @Override
             public void formatDate(List<MultipartBody.Part> multiPartList, DocumentVO vo) {
@@ -562,7 +640,8 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
                 .docUploadProcess();
     }
 
-    public void addDec() {
+    void addDec() {
+        docAction.animationClose(docLinear);
         DecisionCreateDialog.DecisionCreateListener listener
                 = new DecisionCreateDialog.DecisionCreateListener() {
             @Override
@@ -604,8 +683,36 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
 
     }
 
-    public void addFoc() {
+    void addFoc() {
+        docAction.animationClose(docLinear);
 
+        FocusCreateDialog.ChatRoomCreateListener listener
+                = new FocusCreateDialog.ChatRoomCreateListener() {
+            @Override
+            public void getParameter(ChatRoomVO vo) {
+                focusService.insertMulti(project.getPcode(), userList, vo);
+                focusService.work(new NetworkSuccessWork() {
+                    @Override
+                    public void work(Object... objects) {
+                        stompBuilder.sendMessage(StompBuilder.INSERT, StompBuilder.CHATROOM, vo);
+
+                        // 채팅 전송
+                        ChatContentsVO chatContentsVO = new ChatContentsVO();
+                        chatContentsVO.setCrcode(chatRoomVO.getCrcode());
+                        chatContentsVO.setCrcoderef(vo.getCrcode());
+                        chatContentsVO.setCcontents(vo.getFctitle());
+                        chatContentsVO.setUid(UserInfo.getUid());
+                        chatContentsService.insert(chatContentsVO);
+                    }
+                });
+            }
+        };
+
+        new FocusCreateDialog(this)
+                .setChatRoomCreateListener(listener)
+                .setPcoce(project.getPcode())
+                .setCrcode(chatRoomVO.getCrcode())
+                .showDecisionParameter();
     }
 
 
@@ -617,7 +724,27 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
 
     @Override
     public void onDocClick(View view, DocumentVO vo) {
-        new FileDownLoadServiceDialog(ChatingActivity.this, vo);
+
+        DialogDocParam.FileUpdateListener listener =
+                new DialogDocParam.FileUpdateListener() {
+                    @Override
+                    public void update(DocumentVO vo) {
+                        stompBuilder.sendMessage(StompBuilder.UPDATE, StompBuilder.DOCUMENT, vo);
+                    }
+
+                    @Override
+                    public void insert(DocumentVO vo) {
+                        stompBuilder.sendMessage(StompBuilder.INSERT, StompBuilder.DOCUMENT, vo);
+                    }
+                };
+
+        new FileDownLoadServiceDialog(ChatingActivity.this)
+        .setVo(vo)
+        .setPcode(project.getPcode())
+        .setCrmode(chatRoomVO.getCrmode())
+        .setPermision(project.getPpermission())
+        .setFileUpdateListener(listener)
+        .showFileData();
     }
 
     @Override
@@ -625,11 +752,12 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         DecisionItemSelectDialog.DecisionEventListener listener
                 = new DecisionItemSelectDialog.DecisionEventListener() {
             @Override
-            public void closeClick() {
+            public void update() {
                 stompBuilder.sendMessage(StompBuilder.UPDATE, StompBuilder.DECISION, vo);
             }
         };
         new DecisionItemSelectDialog(this, vo)
+                .setPcode(project.getPcode())
                 .setCrmode(chatRoomVO.getCrmode())
                 .setPermision(project.getPpermission())
                 .setDecisionEventListener(listener)
@@ -638,7 +766,18 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
 
     @Override
     public void onChaClick(View view, ChatRoomVO vo) {
+        FocusItemSelectDialog.FocusEventListener listener
+                = new FocusItemSelectDialog.FocusEventListener() {
+            @Override
+            public void event() {
+                stompBuilder.sendMessage(StompBuilder.UPDATE, StompBuilder.CHATROOM, vo);
+            }
+        };
 
+        new FocusItemSelectDialog(this, vo)
+                .setFocusEventListener(listener)
+                .setProject(project)
+                .showSelectDialog();
     }
 
 
@@ -646,18 +785,8 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
 
 
     /*
-     * NetWork Access
+     * NetWork Service
      * */
-
-    public void sendMessage(String msg) {
-        ChatContentsVO vo = new ChatContentsVO();
-        vo.setCrcode(chatRoomVO.getCrcode());
-        vo.setCcontents(msg);
-        vo.setUid(UserInfo.getUid());
-
-        chatContentsService.insert(vo);
-        input.setText("");
-    }
 
     @Override
     public void work(Object... objects) {
@@ -671,10 +800,18 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         refresh();
     }
 
+    void sendMessage(String msg) {
+        ChatContentsVO vo = new ChatContentsVO();
+        vo.setCrcode(chatRoomVO.getCrcode());
+        vo.setCcontents(msg);
+        vo.setUid(UserInfo.getUid());
 
-    /*
-     * Stomp Subscribe
-     * */
+        chatContentsService.insert(vo);
+        input.setText("");
+    }
+
+
+    // Stomp Subscribe
     @Override
     public void topic(String msg, String type, String object) {
         switch (msg) {
@@ -690,7 +827,8 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         }
     }
 
-    private void insertTopic(String type, String object) {
+    // Stomp Subscribe Process
+    void insertTopic(String type, String object) {
         switch (type) {
             case StompBuilder.PROJECTJOIN:
                 projectJoinService.selectProjectJoinUsers(project.getPcode());
@@ -698,6 +836,7 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
                 break;
             case StompBuilder.CHATCONTENTS:
                 ChatContentsVO contentsVo = new Gson().fromJson(object, ChatContentsVO.class);
+                if (contentsVo.getCrcode() != chatRoomVO.getCrcode()) return;
                 Chating c = new Chating();
                 c.setChatContentsVO(contentsVo);
                 for (UserInfos u : userList) {
@@ -723,27 +862,66 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
                 break;
             case StompBuilder.DOCUMENT:
                 DocumentVO docVo = new Gson().fromJson(object, DocumentVO.class);
+                if (docVo.getCrcode() != chatRoomVO.getCrcode()) return;
+
                 documentList.add(docVo);
                 refresh();
                 break;
             case StompBuilder.DECISION:
                 DecisionVO decVo = new Gson().fromJson(object, DecisionVO.class);
+                if (decVo.getCrcode() != chatRoomVO.getCrcode()) return;
+
                 decisionList.add(decVo);
+                refresh();
+                break;
+            case StompBuilder.CHATROOM:
+                ChatRoomVO chatVo = new Gson().fromJson(object, ChatRoomVO.class);
+                focusList.add(chatVo);
                 refresh();
                 break;
         }
     }
 
-    private void updateTopic(String type, String object) {
+    void updateTopic(String type, String object) {
         switch (type) {
+            case StompBuilder.CHATROOM :
+                ChatRoomVO chatVo = new Gson().fromJson(object, ChatRoomVO.class);
+                for (ChatRoomVO vo : focusList){
+                    if (vo.getCrcode() == chatVo.getCrcode()){
+                        if (chatVo.getCrclose() == 1){
+                            vo.setCrclose(chatVo.getCrclose());
+                            Toast.makeText(this, "(회의) \"" + vo.getFctitle() + "\" 가 종료 되었습니다."
+                                    , Toast.LENGTH_SHORT).show();
+                            refresh();
+                            break;
+                        } else {
+                            vo.setTcode(chatVo.getTcode());
+                            Toast.makeText(this, "(투표) \"" + vo.getFctitle() + "\" 의 업무 위치가 변경 되었습니다."
+                                    , Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+                for (Chating chat : chatContentsList) {
+                    if (chat.getChatContentsVO().getCrcoderef() == chatVo.getCrcode()) {
+                        recyclerView.scrollToPosition(chatContentsList.indexOf(chat));
+                        break;
+                    }
+                }
+                break;
             case StompBuilder.DECISION:
                 DecisionVO decVo = new Gson().fromJson(object, DecisionVO.class);
                 if (decVo.getCrcode() != chatRoomVO.getCrcode()) return;
                 for (DecisionVO vo : decisionList) {
                     if (vo.getDscode() == decVo.getDscode()) {
-                        vo.setDsclose(decVo.getDsclose());
-                        Toast.makeText(this, "(투표) \"" + vo.getDstitle() + "\" 가 종료 되었습니다."
-                                , Toast.LENGTH_SHORT).show();
+                        if (decVo.getDsclose() == 1){
+                            vo.setDsclose(decVo.getDsclose());
+                            Toast.makeText(this, "(투표) \"" + vo.getDstitle() + "\" 가 종료 되었습니다."
+                                    , Toast.LENGTH_SHORT).show();
+                        } else {
+                            vo.setTcode(decVo.getTcode());
+                            Toast.makeText(this, "(투표) \"" + vo.getDstitle() + "\" 의 업무 위치가 변경 되었습니다."
+                                    , Toast.LENGTH_SHORT).show();
+                        }
                         refresh();
                         break;
                     }
@@ -755,12 +933,24 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
                     }
                 }
                 break;
-            case StompBuilder.PROJECTJOIN :
-                ProjectJoinVO projectJoinVO = new Gson().fromJson(object, ProjectJoinVO.class);
+            case StompBuilder.DOCUMENT:
+                DocumentVO docVo = new Gson().fromJson(object, DocumentVO.class);
+                Toast.makeText(this, "(자료) \"" + docVo.getDmtitle() + "\" 의 업무 위치가 변경 되었습니다."
+                        , Toast.LENGTH_SHORT).show();
 
+                for (Chating chat : chatContentsList) {
+                    if (chat.getChatContentsVO().getDmcode() == docVo.getDmcode()) {
+                        recyclerView.scrollToPosition(chatContentsList.indexOf(chat));
+                        break;
+                    }
+                }
+                break;
+            case StompBuilder.PROJECTJOIN:
+                ProjectJoinVO projectJoinVO = new Gson().fromJson(object, ProjectJoinVO.class);
                 if (chatRoomVO.getCrmode() != 1) return;
-                for (UserInfos user : projectJoinUserInfo){
-                    if (projectJoinVO.getUid().equals(user.getId())){
+
+                for (UserInfos user : projectJoinUserInfo) {
+                    if (projectJoinVO.getUid().equals(user.getId())) {
                         userList.add(user);
                         refresh();
                         Toast.makeText(this, "\"" + user.getName() + "\" 님이 프로젝트에 참가 하였습니다."
@@ -772,7 +962,8 @@ public class ChatingActivity extends AppCompatActivity implements NetworkSuccess
         }
     }
 
-    private void deleteTopic(String type, String object) {
+    void deleteTopic(String type, String object) {
 
     }
+
 }

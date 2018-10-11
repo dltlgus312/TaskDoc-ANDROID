@@ -196,23 +196,14 @@ public class ChatRoom extends Fragment implements ChatRoomCycle.OnClickListener 
         ChatRoomVO chatRoomVO = new ChatRoomVO();
         chatRoomVO.setCrmode(2);
 
-        ProjectVO projectVO = new ProjectVO();
-        projectVO.setPcode(((ProjectProgressActivity)getActivity()).project.getPcode());
+        int pcode = ((ProjectProgressActivity)getActivity()).project.getPcode();
 
-        List<UserInfoVO> userList = new ArrayList<>();
-
-        for (UserInfos user : addList){
-            UserInfoVO vo = new UserInfoVO();
-            vo.setUid(user.getId());
-            userList.add(vo);
-        }
-
-        chatRoomService.insertMulti(projectVO, userList, chatRoomVO);
+        chatRoomService.insertMulti(pcode, addList, chatRoomVO);
         chatRoomService.work(new NetworkSuccessWork() {
             @Override
             public void work(Object... objects) {
                 ((ProjectProgressActivity) getActivity()).stompBuilder.sendMessage(
-                        StompBuilder.INSERT, StompBuilder.CHATROOM, ""
+                        StompBuilder.INSERT, StompBuilder.CHATROOM, chatRoomVO
                 );
             }
         });

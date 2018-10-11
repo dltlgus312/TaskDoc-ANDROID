@@ -30,8 +30,8 @@ public interface ChatRoomCRUD {
     @POST("/chatroom") // KEY = "project" : ProjectVO, "userInfo" : UserInfoVO, "chatRoom" : ChatRoomVO
     Call<Integer> createChatRoom(@Body Map<String, Object> map);
 
-    @POST("/chatroom/multi") // KEY = "project" : ProjectVO, "userInfo" : List<UserInfoVO>, "chatRoom" : ChatRoomVO
-    Call<Integer> createChatRoomMulti(@Body Map<String, Object> map);
+    @POST("/chatroom/multicreate") // KEY = "project" : ProjectVO, "userInfo" : List<UserInfoVO>, "chatRoom" : ChatRoomVO
+    Call<ChatRoomVO> createChatRoomMulti(@Body Map<String, Object> map);
 
     @PUT("/chatroom")
     Call<Integer> updateChatRoom(@Body ChatRoomVO vo);

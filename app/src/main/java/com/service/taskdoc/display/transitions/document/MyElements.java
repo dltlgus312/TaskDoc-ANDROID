@@ -100,7 +100,9 @@ public class MyElements extends Fragment implements DocumentCycle.ClickListener 
 
     @Override
     public void fileClick(DocumentVO vo) {
-        new FileDownLoadServiceDialog(getContext(), vo);
+        new FileDownLoadServiceDialog(getContext())
+                .setVo(vo)
+                .showFileData();
     }
 
     @Override

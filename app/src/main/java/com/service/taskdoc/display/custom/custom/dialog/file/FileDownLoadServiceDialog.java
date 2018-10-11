@@ -42,17 +42,6 @@ public class FileDownLoadServiceDialog implements FileService.FileLoadService {
         init();
     }
 
-    public FileDownLoadServiceDialog(Context context, DocumentVO vo) {
-        this.context = context;
-        this.vo = vo;
-
-        DialogDocParam dialogDocParam = new DialogDocParam(context, vo);
-        dialogDocParam.setFileLoadService(this);
-        dialog = dialogDocParam.show();
-
-        init();
-    }
-
     public void init(){
 
 
@@ -113,7 +102,90 @@ public class FileDownLoadServiceDialog implements FileService.FileLoadService {
         barDialog.setCancelable(false);
     }
 
+    public void showFileData(){
+        DialogDocParam dialogDocParam = new DialogDocParam(context);
 
+        dialogDocParam.setPcode(pcode);
+        dialogDocParam.setPermision(permision);
+        dialogDocParam.setVo(vo);
+        dialogDocParam.setCrmode(crmode);
+        dialogDocParam.setFileUpdateListener(new DialogDocParam.FileUpdateListener() {
+            @Override
+            public void update(DocumentVO vo) {
+                if (fileUpdateListener != null) fileUpdateListener.update(vo);
+            }
+
+            @Override
+            public void insert(DocumentVO vo) {
+                if (fileUpdateListener != null) fileUpdateListener.insert(vo);
+            }
+        });
+        dialogDocParam.showDownLoadInit();
+
+        dialogDocParam.setFileLoadService(this);
+        dialog = dialogDocParam.show();
+    }
+
+
+    /*
+    * Data Ref
+    * */
+    String permision;
+
+    int crmode;
+
+    int pcode;
+
+    DialogDocParam.FileUpdateListener fileUpdateListener;
+
+    public DocumentVO getVo() {
+        return vo;
+    }
+
+    public FileDownLoadServiceDialog setVo(DocumentVO vo) {
+        this.vo = vo;
+        return this;
+    }
+
+    public String getPermision() {
+        return permision;
+    }
+
+    public FileDownLoadServiceDialog setPermision(String permision) {
+        this.permision = permision;
+        return this;
+    }
+
+    public int getCrmode() {
+        return crmode;
+    }
+
+    public FileDownLoadServiceDialog setCrmode(int crmode) {
+        this.crmode = crmode;
+        return this;
+    }
+
+    public int getPcode() {
+        return pcode;
+    }
+
+    public FileDownLoadServiceDialog setPcode(int pcode) {
+        this.pcode = pcode;
+        return this;
+    }
+
+    public DialogDocParam.FileUpdateListener getFileUpdateListener() {
+        return fileUpdateListener;
+    }
+
+    public FileDownLoadServiceDialog setFileUpdateListener(DialogDocParam.FileUpdateListener fileUpdateListener) {
+        this.fileUpdateListener = fileUpdateListener;
+        return this;
+    }
+
+    /*
+    * Event Listener
+    * */
     @Override
     public void start(FileVO vo) {
         dialog.dismiss();
@@ -145,6 +217,7 @@ public class FileDownLoadServiceDialog implements FileService.FileLoadService {
 
     @Override
     public void fail(String msg) {
+        arcDialog.dismiss();
         Toast.makeText(context, "파일 다운로드 실패. \n 실패사유: " + msg, Toast.LENGTH_SHORT).show();
     }
 

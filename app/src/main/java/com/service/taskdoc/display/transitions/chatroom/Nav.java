@@ -13,7 +13,6 @@ import com.service.taskdoc.database.business.transfer.UserInfos;
 import com.service.taskdoc.database.transfer.ChatRoomVO;
 import com.service.taskdoc.database.transfer.DecisionVO;
 import com.service.taskdoc.database.transfer.DocumentVO;
-import com.service.taskdoc.database.transfer.UserInfoVO;
 
 import java.util.List;
 
@@ -24,8 +23,10 @@ public class Nav extends Fragment {
 
     private Nav_File navFile = new Nav_File();
     private Nav_Focus navFocus = new Nav_Focus();
-    private Nav_Decision navDecision =  new Nav_Decision();
+    private Nav_Decision navDecision = new Nav_Decision();
     private Nav_User navUser = new Nav_User();
+
+    private boolean focusVisibleGone = false;
 
     public Nav() {
         // Required empty public constructor
@@ -39,6 +40,7 @@ public class Nav extends Fragment {
         View view = inflater.inflate(R.layout.fragment_chat_room_nav, container, false);
         LinearLayout quit = view.findViewById(R.id.quit);
 
+
         quit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -47,33 +49,43 @@ public class Nav extends Fragment {
         });
 
         getChildFragmentManager().beginTransaction().replace(R.id.file, navFile).addToBackStack(null).commit();
-        getChildFragmentManager().beginTransaction().replace(R.id.focus, navFocus).addToBackStack(null).commit();
+
+        if (focusVisibleGone) {
+
+        } else {
+            getChildFragmentManager().beginTransaction().replace(R.id.focus, navFocus).addToBackStack(null).commit();
+        }
         getChildFragmentManager().beginTransaction().replace(R.id.decision, navDecision).addToBackStack(null).commit();
         getChildFragmentManager().beginTransaction().replace(R.id.user, navUser).addToBackStack(null).commit();
 
         return view;
     }
 
-    public void setDocumentList(List<DocumentVO> list){
+    public void setFocusVisibleGone(boolean focusVisibleGone) {
+        this.focusVisibleGone = focusVisibleGone;
+    }
+
+    public void setDocumentList(List<DocumentVO> list) {
         navFile.setList(list);
     }
 
-    public void setDecisionList(List<DecisionVO> list){
+    public void setDecisionList(List<DecisionVO> list) {
         navDecision.setList(list);
     }
 
-    public void setUserList(List<UserInfos> list){
+    public void setUserList(List<UserInfos> list) {
         navUser.setList(list);
     }
 
-    public void setFocusList(List<ChatRoomVO> list){
+    public void setFocusList(List<ChatRoomVO> list) {
         navFocus.setList(list);
     }
 
-    public void notifyDataSetChanged(){
+    public void notifyDataSetChanged() {
         navFile.notifyDataSetChanged();
         navDecision.notifyDataSetChanged();
         navUser.notifyDataSetChanged();
-        navFocus.notifyDataSetChanged();
+        if (!focusVisibleGone)
+            navFocus.notifyDataSetChanged();
     }
 }

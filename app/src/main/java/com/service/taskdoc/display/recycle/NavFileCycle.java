@@ -46,7 +46,7 @@ public class NavFileCycle extends RecyclerView.Adapter<NavFileCycle.ViewHolder> 
         linearLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                if (onClickListener != null) onClickListener.onClickItem(vo);
             }
         });
     }
@@ -71,5 +71,20 @@ public class NavFileCycle extends RecyclerView.Adapter<NavFileCycle.ViewHolder> 
             date = itemView.findViewById(R.id.date);
             name = itemView.findViewById(R.id.name);
         }
+    }
+
+
+    OnClickListener onClickListener;
+
+    public OnClickListener getOnClickListener() {
+        return onClickListener;
+    }
+
+    public void setOnClickListener(OnClickListener onClickListener) {
+        this.onClickListener = onClickListener;
+    }
+
+    public interface OnClickListener{
+        void onClickItem(DocumentVO vo);
     }
 }

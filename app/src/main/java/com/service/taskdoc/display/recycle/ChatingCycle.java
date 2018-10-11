@@ -28,10 +28,11 @@ import java.util.List;
 
 public class ChatingCycle extends RecyclerView.Adapter<ChatingCycle.ViewHolder> {
 
-    private List<Chating> chatContentsList;
-    private List<DocumentVO> documentList;
-    private List<DecisionVO> decisionList;
-    private List<ChatRoomVO> chatRoomList;
+
+    List<Chating> chatContentsList;
+    List<DocumentVO> documentList;
+    List<DecisionVO> decisionList;
+    List<ChatRoomVO> chatRoomList;
 
     private OnClickListener onClickListener;
 
@@ -42,13 +43,7 @@ public class ChatingCycle extends RecyclerView.Adapter<ChatingCycle.ViewHolder> 
         this.chatRoomList = chatRoomList;
     }
 
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-        LayoutInflater layoutInflater = LayoutInflater.from(viewGroup.getContext());
-        View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.recycle_item_chating, viewGroup, false);
-        return new ChatingCycle.ViewHolder(view);
-    }
+
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int i) {
@@ -62,6 +57,12 @@ public class ChatingCycle extends RecyclerView.Adapter<ChatingCycle.ViewHolder> 
         TextView name = viewHolder.name;
         TextView permission = viewHolder.permission;
         TextView date = viewHolder.date;
+
+        if (modeFocus){
+            name.setTextColor(Color.WHITE);
+            permission.setTextColor(Color.WHITE);
+            date.setTextColor(Color.WHITE);
+        }
 
 
         /*
@@ -149,14 +150,11 @@ public class ChatingCycle extends RecyclerView.Adapter<ChatingCycle.ViewHolder> 
 
     }
 
-    public OnClickListener getOnClickListener() {
-        return onClickListener;
-    }
 
-    public void setOnClickListener(OnClickListener onClickListener) {
-        this.onClickListener = onClickListener;
-    }
 
+    /*
+    * Service
+    * */
     public Button documentSettingUi(String title, String mode, ViewGroup viewGroup){
         LinearLayout linearLayout = new LinearLayout(viewGroup.getContext());
         linearLayout.setOrientation(LinearLayout.VERTICAL);
@@ -182,6 +180,32 @@ public class ChatingCycle extends RecyclerView.Adapter<ChatingCycle.ViewHolder> 
         return button;
     }
 
+
+
+    /*
+    * Mode Color Setting
+    * */
+    boolean modeFocus;
+
+    public boolean isModeFocus() {
+        return modeFocus;
+    }
+
+    public void setModeFocus() {
+        this.modeFocus = true;
+    }
+
+    /*
+    * Override
+    * */
+    @NonNull
+    @Override
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
+        LayoutInflater layoutInflater = LayoutInflater.from(viewGroup.getContext());
+        View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.recycle_item_chating, viewGroup, false);
+        return new ChatingCycle.ViewHolder(view);
+    }
+
     @Override
     public int getItemCount() {
         return chatContentsList.size();
@@ -189,6 +213,10 @@ public class ChatingCycle extends RecyclerView.Adapter<ChatingCycle.ViewHolder> 
 
 
 
+
+    /*
+    * Holder Constructor
+    * */
     public class ViewHolder extends RecyclerView.ViewHolder {
 
         private LinearLayout position;
@@ -212,6 +240,19 @@ public class ChatingCycle extends RecyclerView.Adapter<ChatingCycle.ViewHolder> 
         }
     }
 
+
+
+
+    /*
+    * Listener
+    * */
+    public OnClickListener getOnClickListener() {
+        return onClickListener;
+    }
+
+    public void setOnClickListener(OnClickListener onClickListener) {
+        this.onClickListener = onClickListener;
+    }
 
     public interface OnClickListener {
         void onDocClick(View view, DocumentVO vo);

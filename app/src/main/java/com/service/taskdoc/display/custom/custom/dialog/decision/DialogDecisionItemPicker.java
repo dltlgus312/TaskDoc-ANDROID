@@ -7,13 +7,9 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Toast;
 
 import com.service.taskdoc.R;
-import com.service.taskdoc.database.business.UserInfo;
-import com.service.taskdoc.database.business.transfer.UserInfos;
 import com.service.taskdoc.database.transfer.DecisionItemVO;
-import com.service.taskdoc.database.transfer.DecisionVO;
 import com.service.taskdoc.database.transfer.VoterVO;
 import com.service.taskdoc.display.recycle.DecisionItemListCycle;
 
@@ -48,7 +44,7 @@ public class DialogDecisionItemPicker extends AlertDialog.Builder {
         itemcycle = new DecisionItemListCycle(itemList, voterList, true);
 
         LayoutInflater layoutInflater = LayoutInflater.from(context);
-        View view = LayoutInflater.from(context).inflate(R.layout.recycle_item_decision_select_view, null);
+        View view = LayoutInflater.from(context).inflate(R.layout.custom_decision_select_view, null);
 
         RecyclerView recyclerView = view.findViewById(R.id.recycle);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(context);

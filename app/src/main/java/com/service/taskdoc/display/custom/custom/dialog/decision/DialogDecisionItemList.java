@@ -56,10 +56,11 @@ public class DialogDecisionItemList extends AlertDialog.Builder {
         voterList = new ArrayList<>();
 
         LayoutInflater layoutInflater = LayoutInflater.from(context);
-        View view = LayoutInflater.from(context).inflate(R.layout.recycle_item_decision_view, null);
+        View view = LayoutInflater.from(context).inflate(R.layout.custom_decision_view, null);
 
         RecyclerView recyclerView = view.findViewById(R.id.recycle);
         Button voter = view.findViewById(R.id.voter);
+        Button reposition = view.findViewById(R.id.reposition);
         Button close = view.findViewById(R.id.close);
 
 
@@ -73,6 +74,12 @@ public class DialogDecisionItemList extends AlertDialog.Builder {
             @Override
             public void onClick(View view) {
                 if (onClickListener != null) onClickListener.closeClick();
+            }
+        });
+        reposition.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (onClickListener != null) onClickListener.reposition();
             }
         });
 
@@ -102,8 +109,12 @@ public class DialogDecisionItemList extends AlertDialog.Builder {
         if (decisionVO.getDsclose() == 1){
             close.setVisibility(View.GONE);
             voter.setVisibility(View.GONE);
+            reposition.setVisibility(View.GONE);
         } else if (permision != null && permision.equals(Projects.MEMBER) && crmode == 1) {
             close.setVisibility(View.GONE);
+            reposition.setVisibility(View.GONE);
+        } else if (crmode != 1){
+            reposition.setVisibility(View.GONE);
         }
 
         voterService = new VoterService();
@@ -188,5 +199,6 @@ public class DialogDecisionItemList extends AlertDialog.Builder {
         void itemClick(DecisionItemVO item, List<VoterVO> voters);
         void voterClick(List<DecisionItemVO> items, List<List<VoterVO>> voters);
         void closeClick();
+        void reposition();
     }
 }

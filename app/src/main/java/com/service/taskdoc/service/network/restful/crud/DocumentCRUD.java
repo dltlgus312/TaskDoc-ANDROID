@@ -40,7 +40,7 @@ public interface DocumentCRUD {
     Call<Integer> moveDocument(@Body DocumentVO documentVO);
 
     @PUT("/document/copy") // tcode, uid(복사를 원하는자의 id) 를 수정 전송
-    Call<Integer> copyDocument(@Body DocumentVO documentVO);
+    Call<DocumentVO> copyDocument(@Body DocumentVO documentVO);
 
     @PUT("/document") // Document의 제목이나 내용 변경
     Call<Integer> updateDocument(@Body DocumentVO documentVO);

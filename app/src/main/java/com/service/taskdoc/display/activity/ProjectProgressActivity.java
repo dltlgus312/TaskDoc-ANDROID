@@ -33,6 +33,7 @@ import com.service.taskdoc.database.transfer.DocumentVO;
 import com.service.taskdoc.database.transfer.NoticeVO;
 import com.service.taskdoc.database.transfer.ProjectJoinVO;
 import com.service.taskdoc.database.transfer.UserInfoVO;
+import com.service.taskdoc.display.custom.custom.chart.DocOnTheBarItem;
 import com.service.taskdoc.display.transitions.progress.Tab1;
 import com.service.taskdoc.display.transitions.progress.Tab2;
 import com.service.taskdoc.display.transitions.progress.Tab3;
@@ -477,21 +478,30 @@ public class ProjectProgressActivity extends AppCompatActivity
     public void insertTopic(String type, String object) {
         switch (type) {
             case StompBuilder.CHATROOM:
-                if (object.equals("\"\"")) refreshChatRoom();
-                else refreshFocusRoom();
+                ChatRoomVO chatVo = new Gson().fromJson(object, ChatRoomVO.class);
+                if (chatVo.getCrmode() != 3) refreshChatRoom();
+                else if (chatVo.getCrcoderef() == chatRoomInfoList.get(0).getChatRoomVO().getCrcode()) {
+                    refreshFocusRoom();
+                }
                 break;
             case StompBuilder.CHATROOMJOIN:
                 refreshChatRoom();
                 break;
             case StompBuilder.PROJECTJOIN:
+                ProjectJoinVO joinVo = new Gson().fromJson(object, ProjectJoinVO.class);
                 refreshProjectJoin();
+                Toast.makeText(this, "(유저) \"" + joinVo.getUid() + "\" 님에게 프로젝트 초대 메시지를 보냈습니다."
+                        , Toast.LENGTH_SHORT).show();
                 break;
             case StompBuilder.CHATCONTENTS:
                 tab1.addChatContentsAlarm(object);
+                break;
             case StompBuilder.DOCUMENT:
                 DocumentVO vo = new Gson().fromJson(object, DocumentVO.class);
                 if (vo.getCrcode() == chatRoomInfoList.get(0).getChatRoomVO().getCrcode())
                     refreshDocument();
+                Toast.makeText(this, "(파일) \"" + vo.getDmtitle() + "\" 가 추가 되었습니다."
+                        , Toast.LENGTH_SHORT).show();
                 break;
             case StompBuilder.DECISION:
                 refreshDecision();
@@ -501,23 +511,56 @@ public class ProjectProgressActivity extends AppCompatActivity
 
     public void updateTopic(String type, String object) {
         switch (type) {
+            case StompBuilder.CHATROOM:
+                ChatRoomVO chatVo = new Gson().fromJson(object, ChatRoomVO.class);
+
+                for (ChatRoomVO vo : chatRoomList) {
+                    if (vo.getCrcode() == chatVo.getCrcode()) {
+                        if (chatVo.getCrclose() == 1){
+                            vo.setCrclose(chatVo.getCrclose());
+                            Toast.makeText(this, "(회의) \"" + vo.getFctitle() + "\" 가 종료 되었습니다."
+                                    , Toast.LENGTH_SHORT).show();
+                            break;
+                        } else {
+                            vo.setTcode(chatVo.getTcode());
+                            Toast.makeText(this, "(투표) \"" + vo.getFctitle() + "\" 의 업무 위치가 변경 되었습니다."
+                                    , Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+                break;
             case StompBuilder.PROJECTJOIN:
+                ProjectJoinVO joinVo = new Gson().fromJson(object, ProjectJoinVO.class);
                 refreshChatRoom();
                 refreshProjectJoin();
+                Toast.makeText(this, "(유저) \"" + joinVo.getUid() + "\" 님이 프로젝트에 참가 하였습니다."
+                        , Toast.LENGTH_SHORT).show();
                 break;
             case StompBuilder.DECISION:
                 DecisionVO decVo = new Gson().fromJson(object, DecisionVO.class);
-                if (decVo.getCrcode() != chatRoomInfoList.get(0).getChatRoomVO().getCrcode()) return;
+                if (decVo.getCrcode() != chatRoomInfoList.get(0).getChatRoomVO().getCrcode())
+                    return;
                 for (DecisionVO vo : decisionList) {
                     if (vo.getDscode() == decVo.getDscode()) {
-                        vo = decVo;
-                        Toast.makeText(this, "(투표) \"" + vo.getDstitle() + "\" 가 종료 되었습니다."
-                                , Toast.LENGTH_SHORT).show();
+                        if (decVo.getDsclose() == 1){
+                            vo.setDsclose(decVo.getDsclose());
+                            Toast.makeText(this, "(투표) \"" + vo.getDstitle() + "\" 가 종료 되었습니다."
+                                    , Toast.LENGTH_SHORT).show();
+                        } else {
+                            vo.setTcode(decVo.getTcode());
+                            Toast.makeText(this, "(투표) \"" + vo.getDstitle() + "\" 의 업무 위치가 변경 되었습니다."
+                                    , Toast.LENGTH_SHORT).show();
+                        }
                         break;
                     }
                 }
                 break;
-
+            case StompBuilder.DOCUMENT:
+                refreshDocument();
+                DocumentVO docVo = new Gson().fromJson(object, DocumentVO.class);
+                Toast.makeText(this, "(자료) \"" + docVo.getDmtitle() + "\" 의 업무 위치가 변경 되었습니다."
+                        , Toast.LENGTH_SHORT).show();
+                break;
 
         }
     }

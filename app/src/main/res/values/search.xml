@@ -2,9 +2,7 @@
 <resources>
     <string-array name="file_search">
         <item >전체</item>
-        <item >폴더</item>
-        <item >파일</item>
-        <item >이름</item>
-        <item >날짜</item>
+        <item >업무</item>
+        <item >자료</item>
     </string-array>
 </resources>

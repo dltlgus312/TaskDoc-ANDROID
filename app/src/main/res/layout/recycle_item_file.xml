@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:id="@+id/linear"
-    android:padding="4dp"
     xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical">
+    android:id="@+id/linear"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/style_rect_default_button">
 
     <ImageView
         android:id="@+id/img"
-        android:layout_width="100dp"
+        android:layout_width="wrap_content"
         android:layout_height="100dp"
         android:layout_gravity="center"
-        android:padding="12dp"
+        android:padding="4dp"
         android:scaleType="centerInside"
-        android:src="@mipmap/ic_launcher"/>
+        android:src="@drawable/img_folder_fill"/>
 
     <TextView
         android:id="@+id/name"

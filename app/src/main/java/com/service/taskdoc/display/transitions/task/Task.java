@@ -19,9 +19,12 @@ import android.widget.LinearLayout;
 import com.google.gson.Gson;
 import com.service.taskdoc.R;
 import com.service.taskdoc.database.business.Tasks;
+import com.service.taskdoc.database.transfer.PrivateTaskVO;
+import com.service.taskdoc.database.transfer.PublicTaskVO;
 import com.service.taskdoc.display.activity.GanttChartActivity;
 import com.service.taskdoc.display.activity.ProjectActivity;
 import com.service.taskdoc.display.activity.ProjectProgressActivity;
+import com.service.taskdoc.display.custom.custom.dialog.task.CreateTaskDialog;
 import com.service.taskdoc.service.network.restful.service.PrivateTaskService;
 import com.service.taskdoc.service.network.restful.service.PublicTaskService;
 import com.service.taskdoc.service.system.support.listener.OnBackPressedListener;
@@ -151,8 +154,24 @@ public class Task extends Fragment implements OnBackPressedListener {
     }
 
     public void addClick() {
+        CreateTaskDialog.TaskEventListener listener =
+                new CreateTaskDialog.TaskEventListener() {
+                    @Override
+                    public void publicTaskCreate(PublicTaskVO vo) {
 
+                    }
 
+                    @Override
+                    public void privateTaskCreate(PrivateTaskVO vo) {
+
+                    }
+                };
+
+        new CreateTaskDialog(getContext())
+                .setTaskEventListener(listener)
+                .setProject(((ProjectProgressActivity)getActivity()).project)
+                .setPermision(((ProjectProgressActivity)getActivity()).project.getPpermission())
+                .showChoiceType();
         fabClick();
     }
 

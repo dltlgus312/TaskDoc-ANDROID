@@ -349,8 +349,8 @@ public class TaskCycle extends RecyclerView.Adapter<TaskCycle.ViewHolder> {
         public void onChartClick(Task Task);
     }
     public interface RecycleExpandClickListener{
-        public void onExpandClick(RecyclerView recyclerView, int ptcode);
-        public void onExpandAddClick(RecyclerView recyclerView, int ptcode);
+        void onExpandClick(RecyclerView recyclerView, int ptcode);
+        void onExpandAddClick(RecyclerView recyclerView, int ptcode);
     }
 
     /* Holder */

@@ -2,13 +2,16 @@ package com.service.taskdoc.service.network.restful.service;
 
 import android.util.Log;
 
+import com.service.taskdoc.database.business.transfer.UserInfos;
 import com.service.taskdoc.database.transfer.ChatRoomVO;
 import com.service.taskdoc.database.transfer.ProjectVO;
 import com.service.taskdoc.database.transfer.UserInfoVO;
+import com.service.taskdoc.display.activity.ProjectProgressActivity;
 import com.service.taskdoc.service.network.restful.crud.ChatRoomCRUD;
 import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.RequestBuilder;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -118,26 +121,39 @@ public class ChatRoomService {
     }
 
     // KEY = "project" : ProjectVO, "userInfo" : List<UserInfoVO>, "chatRoom" : ChatRoomVO
-    public void insertMulti(ProjectVO projectVO, List<UserInfoVO> userInfoVO, ChatRoomVO chatRoomVO) {
+    public void insertMulti(int pcode, List<UserInfos> userInfosList, ChatRoomVO chatRoomVO) {
+
+        ProjectVO projectVO = new ProjectVO();
+        projectVO.setPcode(pcode);
+
+        List<UserInfoVO> userList = new ArrayList<>();
+
+        for (UserInfos user : userInfosList){
+            UserInfoVO vo = new UserInfoVO();
+            vo.setUid(user.getId());
+            userList.add(vo);
+        }
 
         Map<String, Object> map = new HashMap<>();
 
         map.put("project", projectVO);
-        map.put("userInfo", userInfoVO);
+        map.put("userInfo", userList);
         map.put("chatRoom", chatRoomVO);
 
-        Call<Integer> request = service.createChatRoomMulti(map);
-        request.enqueue(new Callback<Integer>() {
+        Call<ChatRoomVO> request = service.createChatRoomMulti(map);
+        request.enqueue(new Callback<ChatRoomVO>() {
             @Override
-            public void onResponse(Call<Integer> call, Response<Integer> response) {
-                if (response.body() != null && response.body() != -1) {
-                    chatRoomVO.setCrcode(response.body());
+            public void onResponse(Call<ChatRoomVO> call, Response<ChatRoomVO> response) {
+                if (response.body() != null) {
+                    ChatRoomVO vo = response.body();
+                    chatRoomVO.setCrcode(vo.getCrcode());
+                    chatRoomVO.setCrdate(vo.getCrdate());
                     networkSuccessWork.work();
                 }
             }
 
             @Override
-            public void onFailure(Call<Integer> call, Throwable t) {
+            public void onFailure(Call<ChatRoomVO> call, Throwable t) {
                 Log.d(TAG, t.getMessage());
             }
         });

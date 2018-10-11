@@ -47,7 +47,7 @@ public class DocumentService {
         this.fileLoadService = fileLoadService;
     }
 
-    public void setDocumentList(List<DocumentVO> documentList){
+    public void setDocumentList(List<DocumentVO> documentList) {
         this.documentList = documentList;
     }
 
@@ -115,16 +115,16 @@ public class DocumentService {
         RequestBody uid =
                 RequestBody.create(MediaType.parse("multipart/form-data"), vo.getUid());
         RequestBody tcode =
-                RequestBody.create(MediaType.parse("multipart/form-data"), vo.getTcode()+"");
+                RequestBody.create(MediaType.parse("multipart/form-data"), vo.getTcode() + "");
         RequestBody crcode =
-                RequestBody.create(MediaType.parse("multipart/form-data"), vo.getCrcode()+"");
+                RequestBody.create(MediaType.parse("multipart/form-data"), vo.getCrcode() + "");
 
         Call<DocumentVO> request = service.uploadDocument(fileList, dmtitle, dmcontents, uid, tcode, crcode);
         request.enqueue(new Callback<DocumentVO>() {
             @Override
             public void onResponse(Call<DocumentVO> call, Response<DocumentVO> response) {
                 if (response.body() != null) {
-                    if (fileLoadService != null){
+                    if (fileLoadService != null) {
                         fileLoadService.success(response.body());
                     }
                 }
@@ -133,7 +133,7 @@ public class DocumentService {
             @Override
             public void onFailure(Call<DocumentVO> call, Throwable t) {
                 Log.d(TAG, t.getMessage());
-                if (fileLoadService != null){
+                if (fileLoadService != null) {
                     fileLoadService.fail(t.getMessage());
                 }
             }
@@ -177,18 +177,17 @@ public class DocumentService {
     }
 
     public void copy(DocumentVO vo) {
-        Call<Integer> request = service.copyDocument(vo);
-        request.enqueue(new Callback<Integer>() {
+        Call<DocumentVO> request = service.copyDocument(vo);
+        request.enqueue(new Callback<DocumentVO>() {
             @Override
-            public void onResponse(Call<Integer> call, Response<Integer> response) {
-                int result = response.body();
-                if (result == 1) {
-                    networkSuccessWork.work(result);
+            public void onResponse(Call<DocumentVO> call, Response<DocumentVO> response) {
+                if (response != null) {
+                    networkSuccessWork.work(response.body());
                 }
             }
 
             @Override
-            public void onFailure(Call<Integer> call, Throwable t) {
+            public void onFailure(Call<DocumentVO> call, Throwable t) {
                 Log.d(TAG, t.getMessage());
             }
         });
@@ -212,8 +211,9 @@ public class DocumentService {
         });
     }
 
-    public interface FileLoadService{
+    public interface FileLoadService {
         void success(DocumentVO vo);
+
         void fail(String msg);
     }
 

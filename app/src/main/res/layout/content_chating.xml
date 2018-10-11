@@ -27,6 +27,7 @@
                 android:layout_marginTop="3dp"
                 android:layout_marginBottom="3dp"
                 android:layout_marginLeft="16dp"
+                android:imeOptions="actionSearch"
                 android:background="@color/colorWhite"
                 android:singleLine="true" >
             </EditText>
@@ -58,6 +59,7 @@
         </android.support.v7.widget.RecyclerView>
 
         <LinearLayout
+            android:id="@+id/chatLinear"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/colorSubPrimary"

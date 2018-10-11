@@ -5,11 +5,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.widget.Toast;
 
-import com.service.taskdoc.database.business.UserInfo;
+import com.service.taskdoc.database.business.transfer.Task;
 import com.service.taskdoc.database.transfer.DecisionItemVO;
 import com.service.taskdoc.database.transfer.DecisionVO;
 import com.service.taskdoc.database.transfer.VoterVO;
-import com.service.taskdoc.service.network.restful.service.DecisionItemService;
+import com.service.taskdoc.display.custom.custom.dialog.task.DialogTaskPicker;
 import com.service.taskdoc.service.network.restful.service.DecisionService;
 import com.service.taskdoc.service.network.restful.service.VoterService;
 import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
@@ -55,6 +55,8 @@ public class DecisionItemSelectDialog implements DialogDecisionItemList.OnClickL
 
     private String permision;
 
+    private int pcode;
+
     public int getCrmode() {
         return crmode;
     }
@@ -72,6 +74,18 @@ public class DecisionItemSelectDialog implements DialogDecisionItemList.OnClickL
         this.permision = permision;
         return this;
     }
+
+    public int getPcode() {
+        return pcode;
+    }
+
+    public DecisionItemSelectDialog setPcode(int pcode) {
+        this.pcode = pcode;
+        return this;
+    }
+
+
+
 
 
     /*
@@ -137,7 +151,7 @@ public class DecisionItemSelectDialog implements DialogDecisionItemList.OnClickL
                 decisionService.work(new NetworkSuccessWork() {
                     @Override
                     public void work(Object... objects) {
-                        if (decisionEventListener != null) decisionEventListener.closeClick();
+                        if (decisionEventListener != null) decisionEventListener.update();
                     }
                 });
             }
@@ -149,6 +163,33 @@ public class DecisionItemSelectDialog implements DialogDecisionItemList.OnClickL
             }
         });
         builder.show();
+    }
+
+    @Override
+    public void reposition(){
+        DialogTaskPicker dialogTaskPicker = new DialogTaskPicker(context, pcode);
+        dialogTaskPicker.setOnPositiveClick(new DialogTaskPicker.OnPositiveClick() {
+            @Override
+            public void getTask(Task t) {
+                if (t == null) {
+                    Toast.makeText(context, "선택된 업무가 없습니다.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                vo.setTcode(t.getCode());
+
+                decisionService = new DecisionService(crmode);
+                decisionService.update(vo);
+                decisionService.work(new NetworkSuccessWork() {
+                    @Override
+                    public void work(Object... objects) {
+                        if (decisionEventListener != null) decisionEventListener.update();
+                    }
+                });
+
+            }
+        });
+        dialogTaskPicker.show();
     }
 
 
@@ -174,7 +215,7 @@ public class DecisionItemSelectDialog implements DialogDecisionItemList.OnClickL
     }
 
     public interface DecisionEventListener {
-        void closeClick();
+        void update();
     }
 
 

@@ -1,6 +1,8 @@
 package com.service.taskdoc.display.transitions.chatroom;
 
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -13,7 +15,10 @@ import android.widget.TextView;
 
 import com.service.taskdoc.R;
 import com.service.taskdoc.database.transfer.ChatRoomVO;
+import com.service.taskdoc.display.activity.ChatingActivity;
+import com.service.taskdoc.display.custom.custom.dialog.chat.FocusItemSelectDialog;
 import com.service.taskdoc.display.recycle.NavFocusCycle;
+import com.service.taskdoc.service.system.support.StompBuilder;
 
 import java.util.List;
 
@@ -50,7 +55,7 @@ public class Nav_Focus extends Fragment {
         titleLinear.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                goToListClick();
             }
         });
 
@@ -58,17 +63,80 @@ public class Nav_Focus extends Fragment {
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setNestedScrollingEnabled(false);
         recyclerView.setAdapter(cycle);
+        cycle.setOnClickListener(new NavFocusCycle.OnClickListener() {
+            @Override
+            public void onClickItem(ChatRoomVO vo) {
+                clickItemView(vo);
+            }
+        });
+        lastPosition();
 
         return view;
     }
+
+
+
+
+    /*
+     * Click Event
+     * */
+
+    void goToListClick(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("회의록 목록");
+
+        RecyclerView recyclerView = new RecyclerView(getContext());
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getContext());
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setNestedScrollingEnabled(false);
+        recyclerView.setAdapter(cycle);
+
+        builder.setNegativeButton("닫기", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+
+            }
+        });
+
+        builder.setView(recyclerView);
+        builder.show();
+    }
+
+    void clickItemView(ChatRoomVO vo){
+        FocusItemSelectDialog.FocusEventListener listener
+                = new FocusItemSelectDialog.FocusEventListener() {
+            @Override
+            public void event() {
+                ((ChatingActivity)getActivity()).stompBuilder.sendMessage(StompBuilder.UPDATE, StompBuilder.CHATROOM, vo);
+        }
+        };
+
+        new FocusItemSelectDialog(getContext(), vo)
+                .setFocusEventListener(listener)
+                .setProject( ((ChatingActivity)getActivity()).project)
+                .showSelectDialog();
+    }
+
+
+
+
+
+    /*
+     * DataChange
+     * */
 
     public void setList(List<ChatRoomVO> list){
         this.list = list;
         cycle = new NavFocusCycle(list);
     }
 
+    public void lastPosition(){
+        recyclerView.scrollToPosition(cycle.getItemCount()-1);
+    }
+
     public void notifyDataSetChanged(){
         cycle.notifyDataSetChanged();
+        lastPosition();
     }
 
 }

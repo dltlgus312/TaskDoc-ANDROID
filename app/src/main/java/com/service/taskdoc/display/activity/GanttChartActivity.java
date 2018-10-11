@@ -9,6 +9,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -28,14 +29,13 @@ import com.service.taskdoc.database.business.Tasks;
 import com.service.taskdoc.database.business.transfer.Project;
 import com.service.taskdoc.database.business.transfer.Task;
 import com.service.taskdoc.database.transfer.ChatRoomVO;
-import com.service.taskdoc.database.transfer.DecisionItemVO;
 import com.service.taskdoc.database.transfer.DecisionVO;
 import com.service.taskdoc.database.transfer.DocumentVO;
-import com.service.taskdoc.database.transfer.PublicTaskVO;
-import com.service.taskdoc.database.transfer.VoterVO;
 import com.service.taskdoc.display.custom.custom.chart.ChartDataSetting;
 import com.service.taskdoc.display.custom.custom.chart.DocOnTheBarItem;
+import com.service.taskdoc.display.custom.custom.dialog.chat.FocusItemSelectDialog;
 import com.service.taskdoc.display.custom.custom.dialog.decision.DecisionItemSelectDialog;
+import com.service.taskdoc.display.custom.custom.dialog.file.DialogDocParam;
 import com.service.taskdoc.display.custom.custom.dialog.file.FileDownLoadServiceDialog;
 import com.service.taskdoc.display.custom.ganttchart.BarItem;
 import com.service.taskdoc.display.custom.ganttchart.Data;
@@ -45,12 +45,13 @@ import com.service.taskdoc.display.custom.ganttchart.OnTheBarItem;
 import com.service.taskdoc.service.system.support.StompBuilder;
 import com.service.taskdoc.service.system.support.service.ConvertDpPixels;
 import com.service.taskdoc.service.system.support.service.DownActionView;
+import com.service.taskdoc.service.system.support.service.KeyboardManager;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GanttChartActivity extends AppCompatActivity implements GanttChart.SeekBarListener, GanttChart.OnTheBarDrawClickListener, GanttChart.OnTheChartDrawListener, TextWatcher, View.OnClickListener, StompBuilder.SubscribeListener {
+public class GanttChartActivity extends AppCompatActivity implements GanttChart.SeekBarListener, GanttChart.OnTheBarDrawClickListener, GanttChart.OnTheChartDrawListener, TextWatcher, View.OnClickListener, StompBuilder.SubscribeListener, View.OnKeyListener {
 
     private Project project;
 
@@ -119,6 +120,7 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
 
         search.addTextChangedListener(this);
         searchButton.setOnClickListener(this);
+        search.setOnKeyListener(this);
 
         int searchBarDP = (int) ConvertDpPixels.convertDpToPixel(40, this);
         downActionView = new DownActionView(searchBarDP);
@@ -164,7 +166,7 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
             downActionView.animationClose(searchBar);
         } else if (ganttChart.isClickedItem()) {
             ganttChart.clickedItemClose();
-        } else{
+        } else {
             stompBuilder.disconnect();
             finish();
         }
@@ -380,26 +382,57 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
     }
 
     public void docClick(DocumentVO vo) {
-        new FileDownLoadServiceDialog(this, vo);
+        DialogDocParam.FileUpdateListener listener =
+                new DialogDocParam.FileUpdateListener() {
+                    @Override
+                    public void update(DocumentVO vo) {
+                        stompBuilder.sendMessage(StompBuilder.UPDATE, StompBuilder.DOCUMENT, vo);
+                    }
+
+                    @Override
+                    public void insert(DocumentVO vo) {
+                        stompBuilder.sendMessage(StompBuilder.INSERT, StompBuilder.DOCUMENT, vo);
+                    }
+                };
+
+        new FileDownLoadServiceDialog(this)
+                .setVo(vo)
+                .setPcode(project.getPcode())
+                .setCrmode(chatRoomInfo.getChatRoomVO().getCrmode())
+                .setPermision(project.getPpermission())
+                .setFileUpdateListener(listener)
+                .showFileData();
     }
 
     public void decClick(DecisionVO vo) {
         DecisionItemSelectDialog.DecisionEventListener listener
                 = new DecisionItemSelectDialog.DecisionEventListener() {
             @Override
-            public void closeClick() {
+            public void update() {
                 stompBuilder.sendMessage(StompBuilder.UPDATE, StompBuilder.DECISION, vo);
             }
         };
         new DecisionItemSelectDialog(this, vo)
-                .setCrmode(chatRoomInfo.getChatRoomVO().getCrmode())
+                .setPcode(project.getPcode())
+                .setCrmode(1)
                 .setPermision(project.getPpermission())
                 .setDecisionEventListener(listener)
                 .showList();
     }
 
     public void chaClick(ChatRoomVO vo) {
+        FocusItemSelectDialog.FocusEventListener listener
+                = new FocusItemSelectDialog.FocusEventListener() {
+            @Override
+            public void event() {
+                stompBuilder.sendMessage(StompBuilder.UPDATE, StompBuilder.CHATROOM, vo);
+            }
+        };
 
+        new FocusItemSelectDialog(this, vo)
+                .setFocusEventListener(listener)
+                .setProject(project)
+                .showSelectDialog();
     }
 
 
@@ -480,6 +513,15 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         findItemHighLight();
     }
 
+    @Override
+    public boolean onKey(View v, int keyCode, KeyEvent event) {
+        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+            new KeyboardManager().hide(GanttChartActivity.this, search);
+            return true;
+        }
+        return false;
+    }
+
     public void findItemHighLight() {
         if (searchBars.size() > 0) {
             TaskBarItem item = searchBars.get(0);
@@ -489,7 +531,7 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         } else if (searchOnTheBars.size() > 0) {
             DocOnTheBarItem item = searchOnTheBars.get(0);
             ganttChart.goToItem(item);
-            searchBars.remove(item);
+            searchOnTheBars.remove(item);
             item.setHighlightCount();
         } else searchItem();
     }
@@ -500,15 +542,65 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         if (title.equals("") || title.equals(" ")) return;
 
         searchBars.clear();
+        searchOnTheBars.clear();
+
+        String text = spinner.getSelectedItem().toString();
+
+        if (text.equals("전체")){
+            allSearch(title);
+        } else if(text.equals("업무")){
+            taskSearch(title);
+        } else if (text.equals("자료")){
+            docSearch(title);
+        }
+
+
+        if (searchBars.size() < 1 && searchOnTheBars.size() < 1) return;
+
+        findItemHighLight();
+    }
+
+    public void allSearch(String title){
         for (TaskBarItem item : bars) {
             if (!item.isDivision() && item.getTitle().contains(title)) {
                 searchBars.add(item);
             }
         }
+        for (DocOnTheBarItem item : onTheBars){
+            if (item.getDocType() == DocOnTheBarItem.DOCUMENT){
+                if (item.getDocumentVO().getDmtitle().contains(title))
+                    searchOnTheBars.add(item);
+            } else if (item.getDocType() == DocOnTheBarItem.DECISION){
+                if (item.getDecisionVO().getDstitle().contains(title))
+                    searchOnTheBars.add(item);
+            } else if (item.getDocType() == DocOnTheBarItem.CHATROOM){
+                if (item.getChatRoomVO().getFctitle().contains(title))
+                    searchOnTheBars.add(item);
+            }
+        }
+    }
 
-        if (searchBars.size() < 1) return;
+    public void taskSearch(String title){
+        for (TaskBarItem item : bars) {
+            if (!item.isDivision() && item.getTitle().contains(title)) {
+                searchBars.add(item);
+            }
+        }
+    }
 
-        findItemHighLight();
+    public void docSearch(String title){
+        for (DocOnTheBarItem item : onTheBars){
+            if (item.getDocType() == DocOnTheBarItem.DOCUMENT){
+                if (item.getDocumentVO().getDmtitle().contains(title))
+                    searchOnTheBars.add(item);
+            } else if (item.getDocType() == DocOnTheBarItem.DECISION){
+                if (item.getDecisionVO().getDstitle().contains(title))
+                    searchOnTheBars.add(item);
+            } else if (item.getDocType() == DocOnTheBarItem.CHATROOM){
+                if (item.getChatRoomVO().getFctitle().contains(title))
+                    searchOnTheBars.add(item);
+            }
+        }
     }
 
 
@@ -542,7 +634,6 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
             case StompBuilder.DOCUMENT:
                 DocumentVO docVo = new Gson().fromJson(object, DocumentVO.class);
                 if (docVo.getCrcode() != chatRoomInfo.getChatRoomVO().getCrcode()) return;
-
                 documents.add(docVo);
                 chartDataSetting.init();
                 Toast.makeText(this, "(파일) \"" + docVo.getDmtitle() + "\" 가 추가 되었습니다."
@@ -551,11 +642,18 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
             case StompBuilder.DECISION:
                 DecisionVO decVo = new Gson().fromJson(object, DecisionVO.class);
                 if (decVo.getCrcode() != chatRoomInfo.getChatRoomVO().getCrcode()) return;
-
                 decisions.add(decVo);
                 chartDataSetting.init();
                 Toast.makeText(this, "(투표) \"" + decVo.getDstitle() + "\" 가 추가 되었습니다."
                         , Toast.LENGTH_SHORT).show();
+                break;
+            case StompBuilder.CHATROOM :
+                ChatRoomVO chatVo = new Gson().fromJson(object, ChatRoomVO.class);
+                chatrooms.add(chatVo);
+                chartDataSetting.init();
+                Toast.makeText(this, "(회의) \"" + chatVo.getFctitle() + "\" 가 추가 되었습니다."
+                        , Toast.LENGTH_SHORT).show();
+
                 break;
         }
     }
@@ -566,11 +664,50 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
                 DecisionVO decVo = new Gson().fromJson(object, DecisionVO.class);
                 if (decVo.getCrcode() != chatRoomInfo.getChatRoomVO().getCrcode()) return;
 
-                DocOnTheBarItem item = findDecItem(decVo);
-                item.setDecisionVO(decVo);
-                item.setHighlightCount();
-                ganttChart.goToItem(item);
-                Toast.makeText(this, "(투표) \"" + item.getDecisionVO().getDstitle() + "\" 가 종료 되었습니다."
+                DocOnTheBarItem decItem = findDecItem(decVo);
+                if (decVo.getDsclose() == 1){
+                    decItem.getDecisionVO().setDsclose(decVo.getDsclose());
+                    decItem.setHighlightCount();
+                    ganttChart.goToItem(decItem);
+                    Toast.makeText(this, "(투표) \"" + decVo.getDstitle() + "\" 가 종료 되었습니다."
+                            , Toast.LENGTH_SHORT).show();
+                } else {
+                    decItem.getDecisionVO().setTcode(decVo.getTcode());
+                    chartDataSetting.init();
+                    decItem.setHighlightCount();
+                    Toast.makeText(this, "(투표) \"" + decVo.getDstitle() + "\" 의 업무 위치가 변경 되었습니다."
+                            , Toast.LENGTH_SHORT).show();
+                }
+
+                break;
+
+            case StompBuilder.CHATROOM :
+                ChatRoomVO chatVo = new Gson().fromJson(object, ChatRoomVO.class);
+                DocOnTheBarItem chatItem = findChaItem(chatVo);
+
+                if (chatVo.getCrclose() == 1){
+                    chatItem.getChatRoomVO().setCrclose(chatVo.getCrclose());
+                    chatItem.setHighlightCount();
+                    ganttChart.goToItem(chatItem);
+                    Toast.makeText(this, "(회의) \"" + chatItem.getChatRoomVO().getFctitle() + "\" 가 종료 되었습니다."
+                            , Toast.LENGTH_SHORT).show();
+                    break;
+                } else {
+                    chatItem.getChatRoomVO().setTcode(chatVo.getTcode());
+                    chartDataSetting.init();
+                    chatItem.setHighlightCount();
+                    Toast.makeText(this, "(투표) \"" + chatItem.getChatRoomVO().getFctitle() + "\" 의 업무 위치가 변경 되었습니다."
+                            , Toast.LENGTH_SHORT).show();
+                }
+
+                break;
+            case StompBuilder.DOCUMENT:
+                DocumentVO docVo = new Gson().fromJson(object, DocumentVO.class);
+                DocOnTheBarItem docItem = findDocItem(docVo);
+                docItem.getDocumentVO().setTcode(docVo.getTcode());
+                chartDataSetting.init();
+                docItem.setHighlightCount();
+                Toast.makeText(this, "(자료) \"" + docVo.getDmtitle() + "\" 의 업무 위치가 변경 되었습니다."
                         , Toast.LENGTH_SHORT).show();
                 break;
         }
@@ -583,10 +720,10 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
 
 
     /*
-    * Item Find
-    * */
+     * Item Find
+     * */
 
-    public DocOnTheBarItem findDecItem(DecisionVO vo){
+    public DocOnTheBarItem findDecItem(DecisionVO vo) {
         for (DocOnTheBarItem i : onTheBars) {
             if (i.getDecisionVO() != null && i.getDecisionVO().getDscode() == vo.getDscode()) {
                 return i;
@@ -595,7 +732,7 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         return null;
     }
 
-    public DocOnTheBarItem findDocItem(DocumentVO vo){
+    public DocOnTheBarItem findDocItem(DocumentVO vo) {
         for (DocOnTheBarItem i : onTheBars) {
             if (i.getDocumentVO() != null && i.getDocumentVO().getDmcode() == vo.getDmcode()) {
                 return i;
@@ -604,8 +741,7 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         return null;
     }
 
-
-    public DocOnTheBarItem findChaItem(ChatRoomVO vo){
+    public DocOnTheBarItem findChaItem(ChatRoomVO vo) {
         for (DocOnTheBarItem i : onTheBars) {
             if (i.getChatRoomVO() != null && i.getChatRoomVO().getCrcode() == vo.getCrcode()) {
                 return i;
@@ -613,4 +749,5 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         }
         return null;
     }
+
 }

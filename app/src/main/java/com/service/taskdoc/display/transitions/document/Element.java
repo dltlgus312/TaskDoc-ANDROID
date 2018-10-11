@@ -8,6 +8,7 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,14 +22,20 @@ import android.widget.Spinner;
 
 import com.service.taskdoc.R;
 import com.service.taskdoc.database.business.Tasks;
+import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.business.transfer.Task;
+import com.service.taskdoc.database.transfer.ChatContentsVO;
 import com.service.taskdoc.database.transfer.DocumentVO;
+import com.service.taskdoc.display.activity.ChatingActivity;
 import com.service.taskdoc.display.activity.ProjectProgressActivity;
+import com.service.taskdoc.display.custom.custom.dialog.file.DialogDocParam;
 import com.service.taskdoc.display.custom.custom.dialog.file.FileDownLoadServiceDialog;
 import com.service.taskdoc.display.recycle.DocumentCycle;
+import com.service.taskdoc.service.system.support.StompBuilder;
 import com.service.taskdoc.service.system.support.service.ConvertDpPixels;
 import com.service.taskdoc.service.system.support.service.DownActionView;
 import com.service.taskdoc.service.system.support.listener.OnBackPressedListener;
+import com.service.taskdoc.service.system.support.service.KeyboardManager;
 
 import java.util.List;
 
@@ -90,6 +97,17 @@ public class Element extends Fragment implements DocumentCycle.ClickListener, On
 
         spinner.setOnItemSelectedListener(this);
         search.addTextChangedListener(this);
+        search.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View v, int keyCode, KeyEvent event) {
+                //Enter key Action
+                if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+                    new KeyboardManager().hide(getContext(), search);
+                    return true;
+                }
+                return false;
+            }
+        });
         searchBar.setVisibility(View.GONE);
 
         home.setOnClickListener(new View.OnClickListener() {
@@ -230,7 +248,26 @@ public class Element extends Fragment implements DocumentCycle.ClickListener, On
 
     @Override
     public void fileClick(DocumentVO vo) {
-        new FileDownLoadServiceDialog(getContext(), vo);
+        DialogDocParam.FileUpdateListener listener =
+                new DialogDocParam.FileUpdateListener() {
+                    @Override
+                    public void update(DocumentVO vo) {
+                        ((ProjectProgressActivity)getActivity()).stompBuilder.sendMessage(StompBuilder.UPDATE, StompBuilder.DOCUMENT, vo);
+                    }
+
+                    @Override
+                    public void insert(DocumentVO vo) {
+                        ((ProjectProgressActivity)getActivity()).stompBuilder.sendMessage(StompBuilder.INSERT, StompBuilder.DOCUMENT, vo);
+                    }
+                };
+
+        new FileDownLoadServiceDialog(getContext())
+                .setVo(vo)
+                .setPcode(((ProjectProgressActivity)getActivity()).project.getPcode())
+                .setCrmode(((ProjectProgressActivity)getActivity()).chatRoomInfoList.get(0).getChatRoomVO().getCrmode())
+                .setPermision(((ProjectProgressActivity)getActivity()).project.getPpermission())
+                .setFileUpdateListener(listener)
+                .showFileData();
     }
 
     @Override
