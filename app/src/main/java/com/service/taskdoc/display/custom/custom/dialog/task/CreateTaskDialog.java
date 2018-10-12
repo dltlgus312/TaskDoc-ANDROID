@@ -1,8 +1,10 @@
 package com.service.taskdoc.display.custom.custom.dialog.task;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.TextView;
@@ -21,6 +23,8 @@ import com.service.taskdoc.database.transfer.PublicTaskVO;
 
 import java.util.Calendar;
 import java.util.List;
+
+import petrov.kristiyan.colorpicker.ColorPicker;
 
 public class CreateTaskDialog {
 
@@ -105,7 +109,13 @@ public class CreateTaskDialog {
         builder.show();
     }
 
+    void publicTask() {
+        showCreateTaskView(true);
+    }
 
+    void privateTask() {
+        showCreateTaskView(false);
+    }
 
 
 
@@ -124,27 +134,7 @@ public class CreateTaskDialog {
 
     }
 
-
-    // 공용업무 생성
-    void publicTask() {
-        showCreateTaskView(true);
-    }
-
-    // 개인업무 선택
-    void privateTask() {
-        showCreateTaskView(false);
-    }
-
-
-
-
-
-
-
-    /*
-     * Show View
-     * */
-
+    // 개인, 공용 생성
     void showCreateTaskView(boolean isPublic) {
         DialogTaskPicker.OnPositiveClick taskListener = new DialogTaskPicker.OnPositiveClick() {
             @Override
@@ -183,7 +173,7 @@ public class CreateTaskDialog {
                                         vo.setTedate(eDate);
                                         vo.setTcolor(color);
                                         vo.setPcode(project.getPcode());
-                                        if (parentsTask.getSdate() != null)
+                                        if (parentsTask != null)
                                             vo.setTrefference(parentsTask.getCode());
                                         taskEventListener.publicTaskCreate(vo);
                                     } else {
@@ -203,6 +193,7 @@ public class CreateTaskDialog {
                                             vo.setPtedate(eDate);
                                             vo.setPtcolor(color);
                                             vo.setPtrefference(parentsTask.getCode());
+                                            vo.setTcode(parentsTask.getReftcode());
                                             vo.setUid(UserInfo.getUid());
                                         }
                                         taskEventListener.privateTaskCreate(vo);
@@ -218,12 +209,22 @@ public class CreateTaskDialog {
         showTaskPicker(isPublic, taskListener);
     }
 
+
+
+
+
+
+
+    /*
+     * Show View
+     * */
+
     void showTaskPicker(boolean isPublic, DialogTaskPicker.OnPositiveClick listener) {
         if (isPublic) {
             // 공용 업무만을 들고온다.
             DialogTaskPicker dialogTaskPicker = new DialogTaskPicker(context, project.getPcode());
             dialogTaskPicker.setOnPositiveClick(listener);
-            dialogTaskPicker.show();
+            dialogTaskPicker.setBanner("현재 업무는 최상단(Activity) 입니다.").show();
         } else {
             // 개인업무를 포함한 전부를 들고온다.
             DialogTaskPicker dialogTaskPicker = new DialogTaskPicker(context, project.getPcode(), true);
@@ -275,8 +276,34 @@ public class CreateTaskDialog {
     }
 
     void showColorPiccker(Button banner) {
+        ColorPicker colorPicker = new ColorPicker(getActivity());
 
+
+        if (!banner.getText().toString().equals("") && banner.getText().toString().length() > 6){
+            int color = 0xff000000;
+            color += Integer.parseInt(banner.getText().toString().substring(2), 16);
+            colorPicker.setDefaultColorButton(color);
+        }
+
+        colorPicker.show();
+
+        colorPicker.setOnChooseColorListener(new ColorPicker.OnChooseColorListener() {
+            @Override
+            public void onChooseColor(int position, int color) {
+                // put code
+                banner.setText(Integer.toHexString(color).substring(2));
+                banner.setBackgroundColor(color);
+            }
+
+            @Override
+            public void onCancel() {
+                // put code
+            }
+        });
     }
+
+
+
 
 
     /*
@@ -285,6 +312,8 @@ public class CreateTaskDialog {
     String permision;
 
     Project project;
+
+    Activity activity;
 
     public String getPermision() {
         return permision;
@@ -301,6 +330,15 @@ public class CreateTaskDialog {
 
     public CreateTaskDialog setProject(Project project) {
         this.project = project;
+        return this;
+    }
+
+    public Activity getActivity() {
+        return activity;
+    }
+
+    public CreateTaskDialog setActivity(Activity activity) {
+        this.activity = activity;
         return this;
     }
 

@@ -34,7 +34,7 @@ public class ProjectActivity extends AppCompatActivity
     private final String TITLE_TASK = "업무 리스트";
     private final String TITLE_CONFIGURE = "관리";
 
-    public PrivateTaskService privateService = new PrivateTaskService();
+    public PrivateTaskService privateService;
     public Task taskView = Task.newInstance(Tasks.PRIVATE);
 
     private OnBackPressedListener onBackPressedListener;
@@ -43,6 +43,8 @@ public class ProjectActivity extends AppCompatActivity
 
     private final int COUNT = 100;
     private int count;
+
+    Tasks tasks = new Tasks();
 
 
     @Override
@@ -61,11 +63,13 @@ public class ProjectActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        privateService = new PrivateTaskService();
+        privateService.setTasks(tasks);
         privateService.list(UserInfo.getUid());
         privateService.work(new NetworkSuccessWork() {
             @Override
             public void work(Object... objects) {
-                taskView.setTasks((Tasks) objects[0]);
+                taskView.setTasks(tasks);
             }
         });
 

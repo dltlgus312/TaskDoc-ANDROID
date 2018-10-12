@@ -1,6 +1,7 @@
 package com.service.taskdoc.display.transitions.task;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -14,7 +15,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.service.taskdoc.R;
@@ -27,7 +30,11 @@ import com.service.taskdoc.display.activity.ProjectProgressActivity;
 import com.service.taskdoc.display.custom.custom.dialog.task.CreateTaskDialog;
 import com.service.taskdoc.service.network.restful.service.PrivateTaskService;
 import com.service.taskdoc.service.network.restful.service.PublicTaskService;
+import com.service.taskdoc.service.system.support.StompBuilder;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.listener.OnBackPressedListener;
+
+import petrov.kristiyan.colorpicker.ColorPicker;
 
 public class Task extends Fragment implements OnBackPressedListener {
 
@@ -92,14 +99,10 @@ public class Task extends Fragment implements OnBackPressedListener {
 
         if (type.equals(Tasks.PUBLIC)) {
             ((ProjectProgressActivity) getActivity()).setOnBackPressedListener(this);
-            publicService = ((ProjectProgressActivity) getActivity()).publicService;
-            privateService = ((ProjectProgressActivity) getActivity()).privateService;
-            ((ProjectProgressActivity) getActivity()).setOnBackPressedListener(this);
             tasks.setPubilc(true);
             add.setVisibility(View.INVISIBLE);
             change.setVisibility(View.INVISIBLE);
         } else {
-            privateService = ((ProjectActivity) getActivity()).privateService;
             ((ProjectActivity) getActivity()).setOnBackPressedListener(this);
             tasks.setPubilc(false);
             add.setVisibility(View.GONE);
@@ -127,10 +130,14 @@ public class Task extends Fragment implements OnBackPressedListener {
             }
         });
 
+        publicService = new PublicTaskService();
+        privateService = new PrivateTaskService();
+
+        publicService.setTasks(tasks);
+        privateService.setTasks(tasks);
+
         return view;
     }
-
-
 
 
     public void fabClick() {
@@ -158,19 +165,38 @@ public class Task extends Fragment implements OnBackPressedListener {
                 new CreateTaskDialog.TaskEventListener() {
                     @Override
                     public void publicTaskCreate(PublicTaskVO vo) {
-
+                        publicService.create(vo);
+                        publicService.work(new NetworkSuccessWork() {
+                            @Override
+                            public void work(Object... objects) {
+                                ((ProjectProgressActivity) getActivity()).stompBuilder.sendMessage(
+                                        StompBuilder.INSERT,
+                                        StompBuilder.PUBLICTASK,
+                                        objects[0]
+                                );
+                            }
+                        });
                     }
 
                     @Override
                     public void privateTaskCreate(PrivateTaskVO vo) {
-
+                        privateService.create(vo);
+                        privateService.work(new NetworkSuccessWork() {
+                            @Override
+                            public void work(Object... objects) {
+                                Toast.makeText(getContext(), "(업무) \"" + vo.getPttitle() + "\" 가 추가 되었습니다."
+                                        , Toast.LENGTH_SHORT).show();
+                                element.dataChange();
+                            }
+                        });
                     }
                 };
 
         new CreateTaskDialog(getContext())
                 .setTaskEventListener(listener)
-                .setProject(((ProjectProgressActivity)getActivity()).project)
-                .setPermision(((ProjectProgressActivity)getActivity()).project.getPpermission())
+                .setProject(((ProjectProgressActivity) getActivity()).project)
+                .setPermision(((ProjectProgressActivity) getActivity()).project.getPpermission())
+                .setActivity(getActivity())
                 .showChoiceType();
         fabClick();
     }
@@ -196,15 +222,9 @@ public class Task extends Fragment implements OnBackPressedListener {
     }
 
 
-
-
-
-    public void datachange(){
-
+    public void datachange() {
+        element.dataChange();
     }
-
-
-
 
 
     @Override

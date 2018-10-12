@@ -31,6 +31,7 @@ import com.service.taskdoc.database.business.transfer.Task;
 import com.service.taskdoc.database.transfer.ChatRoomVO;
 import com.service.taskdoc.database.transfer.DecisionVO;
 import com.service.taskdoc.database.transfer.DocumentVO;
+import com.service.taskdoc.database.transfer.PublicTaskVO;
 import com.service.taskdoc.display.custom.custom.chart.ChartDataSetting;
 import com.service.taskdoc.display.custom.custom.chart.DocOnTheBarItem;
 import com.service.taskdoc.display.custom.custom.dialog.chat.FocusItemSelectDialog;
@@ -51,7 +52,9 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GanttChartActivity extends AppCompatActivity implements GanttChart.SeekBarListener, GanttChart.OnTheBarDrawClickListener, GanttChart.OnTheChartDrawListener, TextWatcher, View.OnClickListener, StompBuilder.SubscribeListener, View.OnKeyListener {
+public class GanttChartActivity extends AppCompatActivity implements
+        GanttChart.SeekBarListener, GanttChart.OnTheBarDrawClickListener, GanttChart.OnTheChartDrawListener,
+        TextWatcher, View.OnClickListener, StompBuilder.SubscribeListener, View.OnKeyListener, GanttChart.OnBarClickListener {
 
     private Project project;
 
@@ -126,6 +129,7 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         downActionView = new DownActionView(searchBarDP);
 
         ganttChart.setSeekBarListener(this);
+        ganttChart.setOnBarClickListener(this);
         ganttChart.setOnTheBarDrawClickListener(this);
         ganttChart.setOnTheChartDrawListener(this);
 
@@ -165,7 +169,7 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         if (downActionView.isOpen()) {
             downActionView.animationClose(searchBar);
         } else if (ganttChart.isClickedItem()) {
-            ganttChart.clickedItemClose();
+            ganttChart.closeClickeditem();
         } else {
             stompBuilder.disconnect();
             finish();
@@ -197,7 +201,6 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
                 Data data = new Data();
                 data.setBars(bars);
                 ganttChart.setData(data);
-
             }
         });
 
@@ -329,7 +332,7 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
 
 
     /*
-     * OnTheBarDraw Click Listener
+     * Bar Click Listener
      * */
 
     @Override
@@ -380,6 +383,18 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
         });
         builder.show();
     }
+
+    @Override
+    public void itemSelect(BarItem barItem) {
+        barItem.setHighlightCount();
+    }
+
+    @Override
+    public void itemModifyClose(BarItem barItem) {
+        Toast.makeText(this, barItem.getTitle()+"이 수정되었습니다.", Toast.LENGTH_SHORT).show();
+        ganttChart.revalidate();
+    }
+
 
     public void docClick(DocumentVO vo) {
         DialogDocParam.FileUpdateListener listener =
@@ -654,6 +669,26 @@ public class GanttChartActivity extends AppCompatActivity implements GanttChart.
                 Toast.makeText(this, "(회의) \"" + chatVo.getFctitle() + "\" 가 추가 되었습니다."
                         , Toast.LENGTH_SHORT).show();
 
+                break;
+            case StompBuilder.PUBLICTASK :
+                PublicTaskVO publicTaskVO = new Gson().fromJson(object, PublicTaskVO.class);
+
+                Task t = new Task();
+                t.setCode(publicTaskVO.getTcode());
+                t.setTitle(publicTaskVO.getTtitle());
+                t.setColor(publicTaskVO.getTcolor());
+                t.setSdate(publicTaskVO.getTsdate());
+                t.setEdate(publicTaskVO.getTedate());
+                t.setPercent(publicTaskVO.getTpercent());
+                t.setRefference(publicTaskVO.getTrefference());
+                t.setSequence(publicTaskVO.getTsequence());
+                t.setRefpcode(publicTaskVO.getPcode());
+
+                tasks.addSort(t);
+                chartDataSetting.init();
+
+                Toast.makeText(this, "(업무) \"" + t.getTitle() + "\" 가 추가 되었습니다."
+                        , Toast.LENGTH_SHORT).show();
                 break;
         }
     }

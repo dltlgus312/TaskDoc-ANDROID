@@ -45,4 +45,12 @@ public class Line {
         }
     }
 
+    public void setBackgroundColor(int color){
+        backgroundColor.setColor(color);
+    }
+
+    public void setLineColor(int color){
+        lineColor.setColor(color);
+    }
+
 }

@@ -8,59 +8,15 @@ import android.os.Build;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 public abstract class BarItem {
-
-    private final int startTextPosition = 50;
-
-    private boolean division = false;
-    private boolean barClicked = false;
-    private boolean titleClicked = false;
-    private boolean modifyClicked = false;
-    private boolean percentDraw = true;
-    private boolean clickable = true;
-
-
-    private float titleTextSize;
-    private float titleTextWidth;
-
-    private Paint barColor;
-    private Paint background;
-    private Paint textPaint;
-    private Paint strokePaint;
-    private Paint modifyArcPaint;
-    private int textColor;
-
-    private float percentTextSize;
-    private int highlightColor;
-
-    private float height;
-
-    private RectF modifyArc;
-
-    private float percentage;
-
-    private List<OnTheBarItem> onTheBarItems;
-
-    private List<Integer> arrowList;
-
-    private int depthArrow;
-
-    private final int HIGHLIGHTCOUNT = 100;
-
-    private int count;
-
 
     /*
      *
      *  Main Value
      * */
-
-    private float left;
-    private float top;
-    private float right;
-    private float bottom;
 
     private int percent;
     private String color;
@@ -68,13 +24,14 @@ public abstract class BarItem {
     private Calendar sdate;
     private Calendar edate;
 
+    private List<OnTheBarItem> onTheBarItems;
 
     public BarItem() {
         background = new Paint();
         barColor = new Paint();
         textPaint = new Paint();
         strokePaint = new Paint();
-        modifyArcPaint = new Paint();
+        modifyPaint = new Paint();
 
         textColor = Color.WHITE;
         highlightColor = Color.YELLOW;
@@ -89,10 +46,11 @@ public abstract class BarItem {
         strokePaint.setAntiAlias(true);
         strokePaint.setColor(Color.BLACK);
         strokePaint.setStyle(Paint.Style.STROKE);
-        strokePaint.setStrokeWidth(2);
+        strokePaint.setStrokeWidth(4);
 
-        modifyArcPaint.setColor(Color.CYAN);
-        modifyArcPaint.setStrokeWidth(3);
+        modifyPaint.setColor(0x88f5f5dc);
+        modifyPaint.setStrokeWidth(4);
+
 
         depthArrow = 6;
     }
@@ -103,10 +61,49 @@ public abstract class BarItem {
 
 
 
+
+
     /*
      *
      * Draw
      * */
+
+    private final int startTextPosition = 50;
+
+    private final int HIGHLIGHTCOUNT = 100;
+
+    private Paint barColor;
+    private Paint background;
+    private Paint textPaint;
+    private Paint strokePaint;
+    private Paint modifyPaint;
+    private int textColor;
+
+    private float titleTextSize;
+    private float titleTextWidth;
+
+    private float percentTextSize;
+    private int highlightColor;
+
+    private float height;
+
+    private float percentage;
+
+    private List<Integer> arrowList;
+
+    private int depthArrow;
+
+    private int highLightCount;
+
+    private float left;
+    private float top;
+    private float right;
+    private float bottom;
+
+    private RectF percentArc;
+    private RectF moveTaskArc;
+    private RectF sDateRect;
+    private RectF eDateRect;
 
     void drawBar(float left, float top, float right, float bottom, Canvas canvas) {
         this.left = left;
@@ -117,22 +114,22 @@ public abstract class BarItem {
         percentage = (right - left) / 100f;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            if (0 < count) {
-                canvas.drawRoundRect(left-3, top-3, right+3, bottom+3, 10, 10, modifyArcPaint);
-                count--;
+            if (0 < highLightCount) {
+                canvas.drawRoundRect(left - 3, top - 3, right + 3, bottom + 3, 10, 10, modifyPaint);
+                highLightCount--;
             }
             canvas.drawRoundRect(left, top, right, bottom, 10, 10, background);
             canvas.drawRoundRect(left, top, left + percentage * percent, bottom, 10, 10, barColor);
         } else {
-            if (0 < count) {
-                canvas.drawRect(left-3, top-3, right+3, bottom+3, modifyArcPaint);
-                count--;
+            if (0 < highLightCount) {
+                canvas.drawRect(left - 3, top - 3, right + 3, bottom + 3, modifyPaint);
+                highLightCount--;
             }
             canvas.drawRect(left, top, right, bottom, background);
             canvas.drawRect(left, top, left + percentage * percent, bottom, barColor);
         }
 
-        if (barClicked && onBarClickListener == null) drawModifyPercent(canvas);
+        if (barLongClicked) drawModify(canvas);
     }
 
     void drawTitle(Canvas canvas) {
@@ -155,16 +152,38 @@ public abstract class BarItem {
         canvas.drawLine(x - 10, y + 10, x, y, barColor);
     }
 
+    void drawModify(Canvas canvas) {
+        drawModifyPercent(canvas);
+        drawModifyMove(canvas);
+        drawModifyDate(canvas);
+    }
+
     void drawModifyPercent(Canvas canvas) {
-        if (onBarClickListener == null) {
-            modifyArc = new RectF(left - titleTextSize + percentage * percent,
-                    top - titleTextSize * 2, left + titleTextSize + percentage * percent, top);
+        percentArc = new RectF(left - titleTextSize + percentage * percent,
+                top - titleTextSize * 2, left + titleTextSize + percentage * percent, top);
 
-            canvas.drawArc(modifyArc, 0, 360, false, modifyArcPaint);
-            canvas.drawLine(modifyArc.centerX(), top, modifyArc.centerX(), bottom, modifyArcPaint);
+        canvas.drawArc(percentArc, 0, 360, false, modifyPaint);
+        canvas.drawLine(percentArc.centerX(), top, percentArc.centerX(), bottom, modifyPaint);
+    }
+
+    void drawModifyDate(Canvas canvas) {
+        sDateRect = new RectF(left, top, left + titleTextSize, bottom);
+        eDateRect = new RectF(right - titleTextSize, top, right, bottom);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            canvas.drawRoundRect(sDateRect, 10, 10, modifyPaint);
+            canvas.drawRoundRect(eDateRect, 10, 10, modifyPaint);
         } else {
-
+            canvas.drawRect(sDateRect, modifyPaint);
+            canvas.drawRect(eDateRect, modifyPaint);
         }
+    }
+
+    void drawModifyMove(Canvas canvas) {
+        moveTaskArc = new RectF((left + right) / 2 - titleTextSize + 10, (top + bottom) / 2 - titleTextSize + 10,
+                (left + right) / 2 + titleTextSize - 10, (top + bottom) / 2 + titleTextSize - 10);
+
+        canvas.drawArc(moveTaskArc, 0, 360, false, modifyPaint);
     }
 
     void drawPercent(Canvas canvas) {
@@ -181,16 +200,29 @@ public abstract class BarItem {
 
 
 
+
+
     /*
      *
      * Click Event
      * */
 
+    private boolean division = false;
+    private boolean barLongClicked = false;
+    private boolean titleClicked = false;
+    private boolean percentClicked = false;
+    private boolean moveClicked = false;
+    private boolean sDateClicked = false;
+    private boolean eDateClicked = false;
+    private boolean percentDraw = true;
+    private boolean clickable = true;
+    private boolean modifyClick = false;
+
+    private Calendar centerDate;
+
     boolean clickPosition(float x, float y) {
 
-
-        boolean click = false;
-
+        // OnTheBarDraw Click Event
         if (this.onTheBarItems != null && this.onTheBarItems.size() > 0 && onTheBarDrawClickListener != null) {
             List<OnTheBarItem> list = new ArrayList<>();
             for (OnTheBarItem b : this.onTheBarItems) {
@@ -200,57 +232,97 @@ public abstract class BarItem {
             }
             if (list.size() > 0) {
                 onTheBarDrawClickListener.itemSelect(this, list);
-                return false;
+                return true;
             }
         }
 
-        if (isClickable() && x < right && x > left && y < bottom && y > top) {
-            if (onBarClickListener != null) {
-                onBarClickListener.itemSelect(this);
-                textPaint.setColor(Color.GREEN);
-                barClicked = true;
-                click = true;
-            } else {
-                textPaint.setColor(Color.CYAN);
-                barClicked = true;
-                click = true;
-            }
-        } else if (x > startTextPosition && x < startTextPosition + titleTextWidth && y < bottom && y > top) {
+        // Bar Click Event
+        if (x < right && x > left && y < bottom && y > top) {
+            if (onBarClickListener != null) onBarClickListener.itemSelect(this);
+            return true;
+        }
+
+        // Title Click Event
+        else if (x > startTextPosition && x < startTextPosition + titleTextWidth && y < bottom && y > top) {
             titleClicked = true;
-            click = true;
+            return true;
         }
 
-        return click;
+        return false;
     }
 
-    void modifyClickPosition(float x, float y) {
-        if (x > modifyArc.left && x < modifyArc.right && y > modifyArc.top && y < modifyArc.bottom) {
-            modifyClicked = true;
-        } else modifyClicked = false;
+    boolean longClickRef(float x, float y) {
+        if (isClickable() && x < right && x > left && y < bottom && y > top) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    boolean longClick(float x, float y) {
-        boolean click = false;
-
-
-        return click;
-    }
-
-    void closeClick() {
-        textPaint.setColor(textColor);
-        barClicked = false;
+    void setLongClick() {
+        barLongClicked = true;
+        modifyClick = true;
+        textPaint.setColor(Color.CYAN);
     }
 
     void closeLongClick() {
+        barLongClicked = false;
+        modifyClick = true;
+        textPaint.setColor(textColor);
 
+        if(onBarClickListener != null) onBarClickListener.itemModifyClose(this);
     }
+
+    boolean modifyClickPosition(float x, float y) {
+        if (x > percentArc.left && x < percentArc.right && y > percentArc.top && y < percentArc.bottom) {
+            percentClicked = true;
+        } else {
+            percentClicked = false;
+        }
+
+        if (x > moveTaskArc.left && x < moveTaskArc.right && y > moveTaskArc.top && y < moveTaskArc.bottom) {
+            moveClicked = true;
+        } else {
+            moveClicked = false;
+        }
+
+        if (x > sDateRect.left && x < sDateRect.right && y > sDateRect.top && y < sDateRect.bottom) {
+            sDateClicked = true;
+        } else {
+            sDateClicked = false;
+        }
+
+        if (x > eDateRect.left && x < eDateRect.right && y > eDateRect.top && y < eDateRect.bottom) {
+            eDateClicked = true;
+        } else {
+            eDateClicked = false;
+        }
+
+        if (percentClicked || moveClicked || sDateClicked || eDateClicked) modifyClick = true;
+        else if (x < right && x > left && y < bottom && y > top) modifyClick = true;
+        else modifyClick = false;
+
+        return modifyClick;
+    }
+
+    boolean isModifyClick(){
+        return modifyClick;
+    }
+
 
 
     /*
      *
-     * Override
+     * ABSTRACT
      * */
+
     protected abstract void updatePercent(int percent);
+
+    protected abstract void updateStartDate(Calendar calendar);
+
+    protected abstract void updateEndDate(Calendar calendar);
+
+
 
 
     /*
@@ -258,12 +330,36 @@ public abstract class BarItem {
      * Service
      * */
 
-    boolean isModifyClicked() {
-        return modifyClicked;
+    boolean isPercentClicked() {
+        return percentClicked;
     }
 
-    void setModifyClicked(boolean modifyClicked) {
-        this.modifyClicked = modifyClicked;
+    void setPercentClicked(boolean percentClicked) {
+        this.percentClicked = percentClicked;
+    }
+
+    boolean isMoveClicked() {
+        return moveClicked;
+    }
+
+    void setMoveClicked(boolean moveClicked) {
+        this.moveClicked = moveClicked;
+    }
+
+    boolean issDateClicked() {
+        return sDateClicked;
+    }
+
+    void setsDateClicked(boolean sDateClicked) {
+        this.sDateClicked = sDateClicked;
+    }
+
+    boolean iseDateClicked() {
+        return eDateClicked;
+    }
+
+    void seteDateClicked(boolean eDateClicked) {
+        this.eDateClicked = eDateClicked;
     }
 
     boolean isTitleClicked() {
@@ -291,6 +387,8 @@ public abstract class BarItem {
         strokePaint.setTextSize(titleTextSize);
         titleTextWidth = textPaint.measureText(title, 0, title.length());
     }
+
+
 
 
 
@@ -336,12 +434,35 @@ public abstract class BarItem {
         return arrowList;
     }
 
+    public Calendar getCenterDate() {
+        return centerDate;
+    }
+
+    public void setCenterDate(Calendar centerDate) {
+        this.centerDate = centerDate;
+    }
+
     public Calendar getSdate() {
         return sdate;
     }
 
     public void setSdate(Calendar sdate) {
         this.sdate = sdate;
+    }
+
+    public void addSdate(Calendar sdate) {
+        sdate.add(Calendar.DATE, -1);
+        if (edate.compareTo(sdate) <= 0) return;
+
+        this.sdate = sdate;
+        updateStartDate(this.sdate);
+    }
+
+    public void moveBar(int day) {
+        this.sdate.add(Calendar.DATE, day);
+        this.edate.add(Calendar.DATE, day);
+        updateStartDate(sdate);
+        updateEndDate(edate);
     }
 
     public Calendar getEdate() {
@@ -352,6 +473,13 @@ public abstract class BarItem {
         this.edate = edate;
         this.edate.add(Calendar.DATE, 1);
     }
+
+    public void addEdate(Calendar edate) {
+        if(edate.compareTo(sdate) <= 0)return;
+        this.edate = edate;
+        updateEndDate(edate);
+    }
+
 
     public void setBarColor(String color) {
         this.color = color;
@@ -378,12 +506,12 @@ public abstract class BarItem {
         this.title = title;
     }
 
-    public boolean isBarClicked() {
-        return this.barClicked;
+    public boolean isBarLongClicked() {
+        return this.barLongClicked;
     }
 
-    public void setBarClicked(boolean barClicked) {
-        this.barClicked = barClicked;
+    public void setBarLongClicked(boolean barLongClicked) {
+        this.barLongClicked = barLongClicked;
     }
 
     public boolean isClickable() {
@@ -441,8 +569,10 @@ public abstract class BarItem {
     }
 
     public void setHighlightCount() {
-        this.count = HIGHLIGHTCOUNT;
+        this.highLightCount = HIGHLIGHTCOUNT;
     }
+
+
 
 
 
@@ -467,8 +597,8 @@ public abstract class BarItem {
         return onTheBarDrawClickListener;
     }
 
-    public void setOnTheBarDrawClickListener(GanttChart.OnTheBarDrawClickListener onBarClickListener) {
-        this.onTheBarDrawClickListener = onBarClickListener;
+    public void setOnTheBarDrawClickListener(GanttChart.OnTheBarDrawClickListener onTheBarClickListener) {
+        this.onTheBarDrawClickListener = onTheBarClickListener;
     }
 
 }

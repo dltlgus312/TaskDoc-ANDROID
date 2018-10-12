@@ -21,6 +21,9 @@ public interface PrivateTaskCRUD {
     @GET("/privatetask/user/{uid}")
     Call<List<PrivateTaskVO>> getPrivateTaskList(@Path("uid") String uid);
 
+    @GET("/privatetask/{ptcode}")
+    Call<PrivateTaskVO> getPrivateTaskView(@Path("ptcode") int ptcode);
+
     @POST("/privatetask")
     Call<Integer> createPrivateTask(@Body PrivateTaskVO privateTaskVO);
 

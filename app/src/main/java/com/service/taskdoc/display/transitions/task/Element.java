@@ -227,7 +227,14 @@ public class Element extends Fragment implements TaskCycle.ClickListener, TaskCy
         }
     }
 
-
+    public void dataChange(){
+        if (cycle != null){
+            cycle.goTo(0);
+            recyclerView.scheduleLayoutAnimation();
+            path.removeViews(+ 1, path.getChildCount() - 1);
+            cycle.notifyDataSetChanged();
+        }
+    }
 
 
     /* Event */

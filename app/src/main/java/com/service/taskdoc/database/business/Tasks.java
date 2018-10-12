@@ -19,22 +19,22 @@ public class Tasks {
 
     private boolean isPubilc = true;
 
-    public Tasks(){
+    public Tasks() {
         this.publicTasks = new ArrayList<>();
         this.privateTasks = new ArrayList<>();
     }
 
-    public static boolean isPublic(Task task){
+    public static boolean isPublic(Task task) {
         boolean isPublic = false;
 
-        if(task.getRefpcode() != 0){
+        if (task.getRefpcode() != 0) {
             isPublic = true;
         }
 
         return isPublic;
     }
 
-    public static PublicTaskVO publicConverter(Task task){
+    public static PublicTaskVO publicConverter(Task task) {
         PublicTaskVO vo = new PublicTaskVO();
 
         vo.setPcode(task.getRefpcode());
@@ -50,7 +50,7 @@ public class Tasks {
         return vo;
     }
 
-    public static PrivateTaskVO privateConverter(Task task){
+    public static PrivateTaskVO privateConverter(Task task) {
         PrivateTaskVO vo = new PrivateTaskVO();
 
         vo.setTcode(task.getReftcode());
@@ -91,30 +91,38 @@ public class Tasks {
         isPubilc = pubilc;
     }
 
-    public boolean isPublic(){ return isPubilc; }
-
-    public void addSort(Task t){
-       if (t.getCode() != t.getRefference()){
-           Task max = null;
-
-           for (Task tt : getPublicTasks()){
-               if (tt.getRefference() == t.getRefference()){
-                   if (tt.getCode() != tt.getRefference() && max == null) max = tt;
-                   else if(max != null && max.getSequence() < tt.getSequence()) max = tt;
-               }
-           }
-
-           if (max == null){
-               for (Task tt : getPublicTasks()){
-                   if (t.getRefference() == tt.getCode()){
-                       getPublicTasks().add(getPublicTasks().indexOf(tt)+1, t);
-                       return;
-                   }
-               }
-           }
-           else getPublicTasks().add(getPublicTasks().indexOf(max)+1, t);
-       }else {
-           getPublicTasks().add(t);
-       }
+    public boolean isPublic() {
+        return isPubilc;
     }
+
+    public void addSort(Task t) {
+        if (t.getReftcode() == 0) {
+            // 공용업무 정렬
+            if (t.getCode() != t.getRefference()) {
+                Task max = null;
+
+                for (Task tt : getPublicTasks()) {
+                    if (tt.getRefference() == t.getRefference()) {
+                        if (tt.getCode() != tt.getRefference() && max == null) max = tt;
+                        else if (max != null && max.getSequence() < tt.getSequence()) max = tt;
+                    }
+                }
+
+                if (max == null) {
+                    for (Task tt : getPublicTasks()) {
+                        if (t.getRefference() == tt.getCode()) {
+                            getPublicTasks().add(getPublicTasks().indexOf(tt) + 1, t);
+                            return;
+                        }
+                    }
+                } else getPublicTasks().add(getPublicTasks().indexOf(max) + 1, t);
+            } else {
+                getPublicTasks().add(t);
+            }
+        } else {
+            // 개인업무 정렬
+            getPrivateTasks().add(t);
+        }
+    }
+
 }

@@ -163,9 +163,19 @@ public class ChartDataSetting {
             for (int j = 0; j < bars.size(); j++) {
                 TaskBarItem childItem = bars.get(j);
                 if (childItem == parentsItem || childItem.isDivision()) continue;
+                        // 상위 공용 하위 공용
+                if (parentsItem.getTask().getReftcode() == 0 && childItem.getTask().getReftcode() == 0 &&
+                        parentsItem.getTask().getCode() == childItem.getTask().getRefference() ||
 
-                if (childItem.getTask().getReftcode() == 0 && parentsItem.getTask().getCode() == childItem.getTask().getRefference()
-                        || childItem.getTask().getReftcode() != 0 && parentsItem.getTask().getCode() == childItem.getTask().getReftcode()) {
+                        // 상위 공용 하위 개인
+                        parentsItem.getTask().getReftcode() == 0 && childItem.getTask().getReftcode() != 0 &&
+                                parentsItem.getTask().getCode() == childItem.getTask().getReftcode() &&
+                                childItem.getTask().getCode() == childItem.getTask().getRefference() ||
+
+                        // 상위 개인 하위 개인
+                        parentsItem.getTask().getReftcode() != 0 && childItem.getTask().getReftcode() != 0 &&
+                                parentsItem.getTask().getCode() == childItem.getTask().getRefference()) {
+
                     parentsItem.addArrowList(j);
                     childItem.setDownDepth(parentsItem.getDepthArrow() - 1);
                 }

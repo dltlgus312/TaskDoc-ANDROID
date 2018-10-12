@@ -154,8 +154,24 @@ public class PublicTaskService {
         request.enqueue(new Callback<Integer>() {
             @Override
             public void onResponse(Call<Integer> call, Response<Integer> response) {
-                Integer result = response.body();
-                networkSuccessWork.work(result);
+                if(response.body() != -1){
+                    publicTaskVO.setTcode(response.body());
+
+                    Call<PublicTaskVO> requestView = service.getPublictaskView(response.body());
+                    requestView.enqueue(new Callback<PublicTaskVO>() {
+                        @Override
+                        public void onResponse(Call<PublicTaskVO> call, Response<PublicTaskVO> response) {
+                            if (response.body() != null){
+                                networkSuccessWork.work(response.body());
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<PublicTaskVO> call, Throwable t) {
+
+                        }
+                    });
+                }
             }
 
             @Override

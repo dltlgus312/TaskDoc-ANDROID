@@ -82,13 +82,14 @@ public class Element extends Fragment implements NetworkSuccessWork, TaskCycle.C
         });
 
 
+        tasks = new Tasks();
         this.service = new PublicTaskService();
+        service.setTasks(tasks);
         service.work(this);
 
         activity = ((MethodBoardViewActivity) getActivity());
         activity.setOnBackPressedListener(this);
 
-        tasks = new Tasks();
 
         cycle = new TaskCycle(tasks);
 
@@ -112,23 +113,6 @@ public class Element extends Fragment implements NetworkSuccessWork, TaskCycle.C
     @Override
     public void work(Object... objects) {
 
-        List<PublicTaskVO> pTasks = (List<PublicTaskVO>) objects[0];
-        tasks.getPublicTasks().clear();
-
-        for (PublicTaskVO vo : pTasks) {
-            Task t = new Task();
-
-            t.setCode(vo.getTcode());
-            t.setTitle(vo.getTtitle());
-            t.setColor(vo.getTcolor());
-            t.setSdate(vo.getTsdate());
-            t.setEdate(vo.getTedate());
-            t.setRefference(vo.getTrefference());
-            t.setSequence(vo.getTsequence());
-            t.setRefpcode(vo.getPcode());
-
-            tasks.getPublicTasks().add(t);
-        }
         cycle.init();
         recyclerView.scheduleLayoutAnimation();
 
@@ -141,6 +125,7 @@ public class Element extends Fragment implements NetworkSuccessWork, TaskCycle.C
     public void onResume() {
         super.onResume();
         service.list(activity.vo.getPcode());
+        tasks.getPublicTasks().clear();
     }
 
     @Override

@@ -25,6 +25,7 @@ import com.service.taskdoc.database.business.Projects;
 import com.service.taskdoc.database.business.Tasks;
 import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.business.transfer.Project;
+import com.service.taskdoc.database.business.transfer.Task;
 import com.service.taskdoc.database.business.transfer.UserInfos;
 import com.service.taskdoc.database.transfer.ChatRoomJoinVO;
 import com.service.taskdoc.database.transfer.ChatRoomVO;
@@ -32,6 +33,7 @@ import com.service.taskdoc.database.transfer.DecisionVO;
 import com.service.taskdoc.database.transfer.DocumentVO;
 import com.service.taskdoc.database.transfer.NoticeVO;
 import com.service.taskdoc.database.transfer.ProjectJoinVO;
+import com.service.taskdoc.database.transfer.PublicTaskVO;
 import com.service.taskdoc.database.transfer.UserInfoVO;
 import com.service.taskdoc.display.custom.custom.chart.DocOnTheBarItem;
 import com.service.taskdoc.display.transitions.progress.Tab1;
@@ -168,6 +170,15 @@ public class ProjectProgressActivity extends AppCompatActivity
         publicService = new PublicTaskService();
         publicService.setTasks(tasks);
         refreshTask();
+
+        privateService = new PrivateTaskService();
+        privateService.setTasks(tasks);
+        privateService.work(new NetworkSuccessWork() {
+            @Override
+            public void work(Object... objects) {
+
+            }
+        });
 
         projectJoinService = new ProjectJoinService();
         projectJoinService.setUserInfosList(userInfoList);
@@ -506,6 +517,28 @@ public class ProjectProgressActivity extends AppCompatActivity
             case StompBuilder.DECISION:
                 refreshDecision();
                 break;
+            case StompBuilder.PUBLICTASK :
+                PublicTaskVO publicTaskVO = new Gson().fromJson(object, PublicTaskVO.class);
+
+                Task t = new Task();
+                t.setCode(publicTaskVO.getTcode());
+                t.setTitle(publicTaskVO.getTtitle());
+                t.setColor(publicTaskVO.getTcolor());
+                t.setSdate(publicTaskVO.getTsdate());
+                t.setEdate(publicTaskVO.getTedate());
+                t.setPercent(publicTaskVO.getTpercent());
+                t.setRefference(publicTaskVO.getTrefference());
+                t.setSequence(publicTaskVO.getTsequence());
+                t.setRefpcode(publicTaskVO.getPcode());
+
+                tasks.addSort(t);
+
+                Toast.makeText(this, "(업무) \"" + t.getTitle() + "\" 가 추가 되었습니다."
+                        , Toast.LENGTH_SHORT).show();
+
+                tab1.taskViewRefresh();
+                tab1.documentViewRefresh();
+                break;
         }
     }
 
@@ -516,7 +549,7 @@ public class ProjectProgressActivity extends AppCompatActivity
 
                 for (ChatRoomVO vo : chatRoomList) {
                     if (vo.getCrcode() == chatVo.getCrcode()) {
-                        if (chatVo.getCrclose() == 1){
+                        if (chatVo.getCrclose() == 1) {
                             vo.setCrclose(chatVo.getCrclose());
                             Toast.makeText(this, "(회의) \"" + vo.getFctitle() + "\" 가 종료 되었습니다."
                                     , Toast.LENGTH_SHORT).show();
@@ -542,7 +575,7 @@ public class ProjectProgressActivity extends AppCompatActivity
                     return;
                 for (DecisionVO vo : decisionList) {
                     if (vo.getDscode() == decVo.getDscode()) {
-                        if (decVo.getDsclose() == 1){
+                        if (decVo.getDsclose() == 1) {
                             vo.setDsclose(decVo.getDsclose());
                             Toast.makeText(this, "(투표) \"" + vo.getDstitle() + "\" 가 종료 되었습니다."
                                     , Toast.LENGTH_SHORT).show();
@@ -572,5 +605,4 @@ public class ProjectProgressActivity extends AppCompatActivity
                 break;
         }
     }
-
 }

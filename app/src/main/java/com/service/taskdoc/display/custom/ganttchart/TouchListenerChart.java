@@ -3,6 +3,8 @@ package com.service.taskdoc.display.custom.ganttchart;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.util.Calendar;
+
 public class TouchListenerChart implements View.OnTouchListener {
 
     GanttChart chart;
@@ -21,28 +23,43 @@ public class TouchListenerChart implements View.OnTouchListener {
     float stackX, stackY;
     float centerW, centerH;
 
+
+
     boolean moving = false;
     boolean zooming = false;
     boolean zoomingW = false;
     boolean zoomingH = false;
-
-    BarItem refBarItem;
+    boolean downTouch = false;
+    boolean threadZooming = false;
 
     TouchListenerChart(GanttChart chart) {
         this.chart = chart;
     }
 
+
+    /*
+     * Touch Service
+     * */
     @Override
     public boolean onTouch(View view, MotionEvent event) {
         int action = event.getAction();
 
         switch (action) {
             case MotionEvent.ACTION_DOWN:
+                downTouch = true;
+
                 touchX = event.getX();
                 touchY = event.getY();
 
-                if (refBarItem != null && chart.getOnBarClickListener() == null)
-                    refBarItem.modifyClickPosition(touchX, touchY);
+                // 1 새로운 터치가 올 때 마다 카운트다운 시작
+                chart.longClickCount = chart.LONGCLICKCOUNT;
+
+                if (chart.isClickedItem()) {
+                    if (chart.longClickItem.modifyClickPosition(touchX, touchY)) {
+                        if (chart.longClickItem.isMoveClicked())
+                            chart.longClickItem.setCenterDate(chart.data.xPositionToDate(touchX));
+                    }
+                }
 
                 if (chart.seekBarListener != null) {
                     chart.seekBarCount = chart.SEEKBARCOUNT;
@@ -61,22 +78,25 @@ public class TouchListenerChart implements View.OnTouchListener {
                 zoom(event);
                 break;
             case MotionEvent.ACTION_UP:
+                if (!moving && !zooming) {
 
-                if (chart.doubleClickCount != 0) {
-                    doubleClickZoom();
-                }// 더블 클릭 이벤트
-                else if (!moving && !zooming) {
-                    doubleClickThread = null;
-                    chart.doubleClickCount = chart.DOUBLECLICKCOUNT;
-                    refBarItem = chart.onClick(touchX, touchY);
+                    if (chart.doubleClickCount != 0 && !threadZooming) {
+                        doubleClickZoom();
+                    }
+
+                    if (!chart.isClickedItem() || !chart.longClickItem.isModifyClick()) {
+                        if (chart.isClickedItem()) chart.closeClickeditem();
+                        else {
+                            if (!chart.onClick(touchX, touchY))
+                                chart.doubleClickCount = chart.DOUBLECLICKCOUNT;
+                        }
+                    }
                 }
-
-                if (refBarItem != null) refBarItem.setModifyClicked(false);
-
                 moving = false;
                 zooming = false;
                 zoomingW = false;
                 zoomingH = false;
+                downTouch = false;
                 break;
         }
         return true;
@@ -85,32 +105,11 @@ public class TouchListenerChart implements View.OnTouchListener {
     void move(MotionEvent event) {
         if (event.getPointerCount() == 2 || zooming) return;
 
-        float x = event.getX();
-        float y = event.getY();
-
-        float distanceX = x - touchX;
-        float distanceY = y - touchY;
-
-        if (refBarItem != null && refBarItem.isModifyClicked()) {
-            moving = true;
-            int percent = (int) ((x - refBarItem.getLeft()) / refBarItem.getPercentage());
-            refBarItem.setPercent(percent);
+        if (chart.isClickedItem() && chart.longClickItem.isModifyClick()) {
+            actionRefBarITem(event.getX());
         } else {
-            if (moving || Math.abs(distanceX) >= chart.TOUCHSLOP) {
-                moving = true;
-                chart.positionX += distanceX;
-                stackX += distanceX;
-            }
-
-            if (moving || Math.abs(distanceY) >= chart.TOUCHSLOP) {
-                moving = true;
-                chart.positionY += distanceY;
-                stackY += distanceY;
-            }
+            actionMoveChart(event.getX(), event.getY());
         }
-
-        touchX = x;
-        touchY = y;
     }
 
     void zoom(MotionEvent event) {
@@ -136,6 +135,9 @@ public class TouchListenerChart implements View.OnTouchListener {
     }
 
 
+    /*
+     * action
+     * */
     synchronized void repositionWidth(float ratio, int zoomMode) {
 
         if (chart.width * ratio < chart.OVERMINWIDTH || chart.width * ratio > chart.OVERMAXWIDTH)
@@ -180,38 +182,81 @@ public class TouchListenerChart implements View.OnTouchListener {
         }
     }
 
-    Thread doubleClickThread;
+    void actionMoveChart(float x, float y) {
+        float distanceX = x - touchX;
+        float distanceY = y - touchY;
+
+        if (moving || Math.abs(distanceX) >= chart.TOUCHSLOP) {
+            moving = true;
+            chart.positionX += distanceX;
+            stackX += distanceX;
+        }
+
+        if (moving || Math.abs(distanceY) >= chart.TOUCHSLOP) {
+            moving = true;
+            chart.positionY += distanceY;
+            stackY += distanceY;
+        }
+
+        touchX = x;
+        touchY = y;
+    }
+
+    void actionRefBarITem(float x) {
+        if (chart.longClickItem.isPercentClicked()) {
+            moving = true;
+            int percent = (int) ((x - chart.longClickItem.getLeft()) / chart.longClickItem.getPercentage());
+            chart.longClickItem.setPercent(percent);
+        } else if (chart.longClickItem.isMoveClicked()) {
+            moving = true;
+            Calendar cal = chart.data.xPositionToDate(x);
+            int diff = chart.data.diffDay(chart.longClickItem.getCenterDate(), cal);
+            chart.longClickItem.moveBar(diff);
+            chart.longClickItem.setCenterDate(cal);
+        } else if (chart.longClickItem.issDateClicked()) {
+            moving = true;
+            chart.longClickItem.addSdate(chart.data.xPositionToDate(x));
+        } else if (chart.longClickItem.iseDateClicked()) {
+            moving = true;
+            chart.longClickItem.addEdate(chart.data.xPositionToDate(x));
+        }
+    }
+
+
+    /*
+     * animation
+     * */
 
     void doubleClickZoom() {
-        if (doubleClickThread == null) {
-            doubleClickThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    int speed = 30;
-                    zoommode = TABZOOM;
-                    if (chart.width <= chart.MINWIDTH) {
-                        while (chart.width < chart.MAXWIDTH) {
-                            try {
-                                Thread.sleep(speed);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            repositionWidth(EXPANSION, zoommode);
+        Thread doubleClickThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                threadZooming = true;
+                int speed = 30;
+                zoommode = TABZOOM;
+                if (chart.width <= chart.MINWIDTH) {
+                    while (chart.width < chart.MAXWIDTH) {
+                        try {
+                            Thread.sleep(speed);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
-                    } else {
-                        while (chart.width > chart.MINWIDTH) {
-                            try {
-                                Thread.sleep(speed);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            repositionWidth(COLLAPSE, zoommode);
+                        repositionWidth(EXPANSION, zoommode);
+                    }
+                } else {
+                    while (chart.width > chart.MINWIDTH) {
+                        try {
+                            Thread.sleep(speed);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
+                        repositionWidth(COLLAPSE, zoommode);
                     }
                 }
-            });
-            doubleClickThread.start();
-        }
+                threadZooming = false;
+            }
+        });
+        doubleClickThread.start();
     }
 
 }

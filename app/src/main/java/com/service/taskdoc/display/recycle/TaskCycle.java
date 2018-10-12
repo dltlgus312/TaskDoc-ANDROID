@@ -247,6 +247,9 @@ public class TaskCycle extends RecyclerView.Adapter<TaskCycle.ViewHolder> {
         copyTasks.remove(task);
     }
 
+
+
+
     /* Click, Long Click Event */
     public void go(Task task) {
 
@@ -297,6 +300,7 @@ public class TaskCycle extends RecyclerView.Adapter<TaskCycle.ViewHolder> {
             this.isGoBack = false;
         }
 
+        if (index == 0) init();
         notifyDataSetChanged();
     }
     public void back() {
@@ -315,6 +319,9 @@ public class TaskCycle extends RecyclerView.Adapter<TaskCycle.ViewHolder> {
         return this.isGoBack;
     }
 
+
+
+
     /* Setting */
     public void setContentVisible(int contentVi) {
         this.contextVisible = contentVi;
@@ -325,6 +332,9 @@ public class TaskCycle extends RecyclerView.Adapter<TaskCycle.ViewHolder> {
     public void setDownArrowVisible(int downArrowVisible) {
         this.downArrowVisible = downArrowVisible;
     }
+
+
+
 
     /* Setter */
     public void setClickListener(ClickListener clickListener) {
@@ -339,6 +349,9 @@ public class TaskCycle extends RecyclerView.Adapter<TaskCycle.ViewHolder> {
         downActionView = new DownActionView(originalHeight);
     }
 
+
+
+
     /* Listener */
     public interface ClickListener {
         public void onClick(Task task);
@@ -352,6 +365,9 @@ public class TaskCycle extends RecyclerView.Adapter<TaskCycle.ViewHolder> {
         void onExpandClick(RecyclerView recyclerView, int ptcode);
         void onExpandAddClick(RecyclerView recyclerView, int ptcode);
     }
+
+
+
 
     /* Holder */
     public class ViewHolder extends RecyclerView.ViewHolder {

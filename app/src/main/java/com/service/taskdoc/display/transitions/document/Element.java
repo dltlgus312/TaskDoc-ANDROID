@@ -221,6 +221,8 @@ public class Element extends Fragment implements DocumentCycle.ClickListener, On
             cycle.goTo(0);
             recyclerView.scheduleLayoutAnimation();
             stack.removeViews(+ 1, stack.getChildCount() - 1);
+
+            cycle.notifyDataSetChanged();
         }
     }
 

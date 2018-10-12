@@ -116,7 +116,6 @@ public class GanttChart extends ViewGroup {
         if (onTheChartDrawListener != null) onTheChartDrawListener.drawFront(canvas);
 
 
-
         sliding();
         reposition();
         countdown();
@@ -158,19 +157,28 @@ public class GanttChart extends ViewGroup {
     }
 
 
+
     /*
      * Count ( SeekBar, DoubleClick )
      * */
 
     final int DOUBLECLICKCOUNT = 20;
     final int SEEKBARCOUNT = 200;
+    final int LONGCLICKCOUNT = 50;
 
     int doubleClickCount;
     int seekBarCount;
+    int longClickCount;
 
     void countdown() {
         if (--seekBarCount <= 0 && seekBarListener != null) seekBarListener.hideSeek();
         if (doubleClickCount > 0) doubleClickCount--;
+        if (touchListenerChart.downTouch && !touchListenerChart.moving && !touchListenerChart.zooming) {
+            if (longClickCount-- == 0){
+                if (isClickedItem()) closeClickeditem();
+                longClickItem = data.onLongClick(touchListenerChart.touchX, touchListenerChart.touchY);
+            }
+        }
     }
 
 
@@ -183,7 +191,7 @@ public class GanttChart extends ViewGroup {
 
     TouchListenerChart touchListenerChart;
 
-    BarItem clickedItem;
+    BarItem longClickItem;
 
     void sliding() {
         if (touchListenerChart.stackX == 0 && touchListenerChart.stackY == 0) return;
@@ -208,7 +216,7 @@ public class GanttChart extends ViewGroup {
         overPositionMove();
     }
 
-    void floodingAnimationMove () {
+    void floodingAnimationMove() {
         if (floodingX == 0 && floodingY == 0) return;
 
         floodingX *= 0.5f;
@@ -223,7 +231,7 @@ public class GanttChart extends ViewGroup {
         if (Math.abs(floodingY) < 0.01f) floodingY = 0;
     }
 
-    void overPositionMove(){
+    void overPositionMove() {
         if (!touchListenerChart.moving && positionX > 0) {
             if ((positionX /= 2) < 0.1f) {
                 positionX = 0;
@@ -237,13 +245,8 @@ public class GanttChart extends ViewGroup {
         }
     }
 
-    BarItem onClick(float x, float y) {
-        clickedItem = data.onClick(x, y);
-        return clickedItem;
-    }
-
-    void onLongClick(float x, float y) {
-        data.onLongClick(x, y);
+    boolean onClick(float x, float y) {
+        return data.onClick(x, y);
     }
 
 
@@ -275,13 +278,8 @@ public class GanttChart extends ViewGroup {
 
     public void setOnTheBarDrawClickListener(OnTheBarDrawClickListener onTheBarDrawClickListener) {
         this.onTheBarDrawClickListener = onTheBarDrawClickListener;
-        if (data != null){
-            this.data.setOnTheBarDrawClickListener(new OnTheBarDrawClickListener() {
-                @Override
-                public void itemSelect(BarItem barItem, List<OnTheBarItem> onTheBarItemItem) {
-                    if(onTheBarDrawClickListener!=null) onTheBarDrawClickListener.itemSelect(barItem, onTheBarItemItem);
-                }
-            });
+        if (data != null) {
+            this.data.setOnTheBarDrawClickListener(onTheBarDrawClickListener);
         }
     }
 
@@ -291,13 +289,8 @@ public class GanttChart extends ViewGroup {
 
     public void setOnBarClickListener(OnBarClickListener onBarClickListener) {
         this.onBarClickListener = onBarClickListener;
-        if (data != null){
-            this.data.setOnBarClickListener(new OnBarClickListener() {
-                @Override
-                public void itemSelect(BarItem barItem) {
-                    if (onBarClickListener != null) onBarClickListener.itemSelect(barItem);
-                }
-            });
+        if (data != null) {
+            this.data.setOnBarClickListener(onBarClickListener);
         }
     }
 
@@ -314,24 +307,24 @@ public class GanttChart extends ViewGroup {
 
 
     /*
-    *  Service
-    * */
+     *  Service
+     * */
 
-    public void clickedItemClose(){
-        clickedItem.closeClick();
-        clickedItem = null;
+    public void closeClickeditem() {
+        longClickItem.closeLongClick();
+        longClickItem = null;
     }
 
-    public boolean isClickedItem(){
-        if (clickedItem == null) return false;
+    public boolean isClickedItem() {
+        if (longClickItem == null) return false;
         else return true;
     }
 
-    public void setFloodingX(float floodingX){
+    public void setFloodingX(float floodingX) {
         this.floodingX = floodingX;
     }
 
-    public void setFloodingY(float floodingY){
+    public void setFloodingY(float floodingY) {
         this.floodingY = floodingY;
     }
 
@@ -340,66 +333,72 @@ public class GanttChart extends ViewGroup {
     }
 
     public void goToDay() {
-        setFloodingX(-(data.getPositionX(data.getToDay()) - getWidth() / 2));
+        setFloodingX(-(data.dateToPositionX(data.getToDay()) - getWidth() / 2));
     }
 
-    public void goToDay(Calendar date){
-        setFloodingX(-(this.data.getPositionX(date) - getWidth() / 2));
+    public void goToDay(Calendar date) {
+        setFloodingX(-(this.data.dateToPositionX(date) - getWidth() / 2));
     }
 
-    public void goToItem(BarItem barItem){
+    public void goToItem(BarItem barItem) {
         setFloodingX(-(barItem.getLeft() - getWidth() / 3));
         setFloodingY(-(barItem.getTop() - getHeight() / 3));
     }
 
-    public void goToItem(OnTheBarItem onTheBarItem){
+    public void goToItem(OnTheBarItem onTheBarItem) {
         setIntervalWidth(GanttChart.MAXWIDTH);
         goToDay(onTheBarItem.getSdate());
         setFloodingY(-(onTheBarItem.getTop() - getHeight() / 2));
     }
 
+    public void revalidate(){
+        data.changeData();
+    }
+
 
 
     /*
-    *  Getter, Setter
-    * */
+     *  Getter, Setter
+     * */
 
     public void setData(Data data) {
         this.data = data;
         this.data.setChart(this);
-        if (onTheBarDrawClickListener != null){
-            this.data.setOnTheBarDrawClickListener(new OnTheBarDrawClickListener() {
-                @Override
-                public void itemSelect(BarItem barItem, List<OnTheBarItem> onTheBarItemItem) {
-                    if(onTheBarDrawClickListener!=null) onTheBarDrawClickListener.itemSelect(barItem, onTheBarItemItem);
-                }
-            });
+        if (onTheBarDrawClickListener != null) {
+            this.data.setOnTheBarDrawClickListener(onTheBarDrawClickListener);
         }
 
-        if (onBarClickListener != null){
-            this.data.setOnBarClickListener(new OnBarClickListener() {
-                @Override
-                public void itemSelect(BarItem barItem) {
-                    if (onBarClickListener != null) onBarClickListener.itemSelect(barItem);
-                }
-            });
+        if (onBarClickListener != null) {
+            this.data.setOnBarClickListener(onBarClickListener);
         }
     }
 
-    public Data getDate(){
+    public Data getDate() {
         return data;
     }
 
     public void setBackgroundColor(int color) {
         backgroundColor = color;
+        line.setBackgroundColor(color);
     }
 
     public void setLineColor(int color) {
         lineColor = color;
+        line.setLineColor(color);
     }
 
     public void setTextColor(int color) {
         textColor = color;
+    }
+
+    public int getTextColor() {
+        return textColor;
+    }
+
+    public float getTextSize(){
+        if (data != null)
+            return data.getTextSize();
+        else return 40.0f;
     }
 
     public void setToDayColor(int color) {
@@ -410,20 +409,20 @@ public class GanttChart extends ViewGroup {
         return toDayColor;
     }
 
-    public void setLineStrokeWidth(int width){
+    public void setLineStrokeWidth(int width) {
         lineWidth = width;
     }
 
-    public float getLineStrokeWidth(){
+    public float getLineStrokeWidth() {
         return lineWidth;
     }
 
-    public void setIntervalWidth(float width){
+    public void setIntervalWidth(float width) {
         if (touchListenerChart != null)
             touchListenerChart.repositionWidth(width / this.width, TouchListenerChart.CENTERZOOM);
     }
 
-    public float getIntervalWidth(){
+    public float getIntervalWidth() {
         return width;
     }
 
@@ -449,17 +448,20 @@ public class GanttChart extends ViewGroup {
         void setSeekPosition(int width);
     }
 
-    public interface OnTheBarDrawClickListener{
+    public interface OnTheBarDrawClickListener {
         void itemSelect(BarItem barItem, List<OnTheBarItem> onTheBarItemItems);
     }
 
     public interface OnTheChartDrawListener {
         void drawFront(Canvas canvas);
+
         void drawBack(Canvas canvas);
     }
 
-    public interface OnBarClickListener{
+    public interface OnBarClickListener {
         void itemSelect(BarItem barItem);
+
+        void itemModifyClose(BarItem barItem);
     }
 
 }

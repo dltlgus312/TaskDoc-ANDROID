@@ -23,6 +23,16 @@ public class PrivateTaskService {
 
     private NetworkSuccessWork networkSuccessWork;
 
+    Tasks tasks;
+
+    public Tasks getTasks() {
+        return tasks;
+    }
+
+    public void setTasks(Tasks tasks) {
+        this.tasks = tasks;
+    }
+
     public void work(NetworkSuccessWork networkSuccessWork){
         this.networkSuccessWork = networkSuccessWork;
     }
@@ -56,7 +66,6 @@ public class PrivateTaskService {
             public void onResponse(Call<List<PrivateTaskVO>> call, Response<List<PrivateTaskVO>> response) {
                 if(response.body() != null && response.body().size() > 0){
                     List<PrivateTaskVO> result = response.body();
-                    Tasks tasks = new Tasks();
 
                     for (PrivateTaskVO vo : result) {
                         Task t = new Task();
@@ -74,9 +83,7 @@ public class PrivateTaskService {
 
                         tasks.getPrivateTasks().add(t);
                     }
-                    networkSuccessWork.work(tasks);
-                }else {
-                    networkSuccessWork.work(new Tasks());
+                    networkSuccessWork.work();
                 }
             }
 
@@ -87,13 +94,43 @@ public class PrivateTaskService {
         });
     }
 
-    public void create(PrivateTaskVO privateTaskVO){
-        Call<Integer> request = service.createPrivateTask(privateTaskVO);
+    public void create(PrivateTaskVO vo){
+        Call<Integer> request = service.createPrivateTask(vo);
         request.enqueue(new Callback<Integer>() {
             @Override
             public void onResponse(Call<Integer> call, Response<Integer> response) {
-                Integer result = response.body();
-                networkSuccessWork.work(result);
+
+                if (response.body() != -1){
+                    Call<PrivateTaskVO> requestView = service.getPrivateTaskView(response.body());
+                    requestView.enqueue(new Callback<PrivateTaskVO>() {
+                        @Override
+                        public void onResponse(Call<PrivateTaskVO> call, Response<PrivateTaskVO> response) {
+                            if (response.body() != null){
+                                Task t = new Task();
+
+                                PrivateTaskVO privateTaskVO = response.body();
+
+                                t.setCode(privateTaskVO.getPtcode());
+                                t.setTitle(privateTaskVO.getPttitle());
+                                t.setColor(privateTaskVO.getPtcolor());
+                                t.setSdate(privateTaskVO.getPtsdate());
+                                t.setEdate(privateTaskVO.getPtedate());
+                                t.setPercent(privateTaskVO.getPtpercent());
+                                t.setRefference(privateTaskVO.getPtrefference());
+                                t.setSequence(privateTaskVO.getPtsequence());
+                                t.setReftcode(privateTaskVO.getTcode());
+
+                                tasks.addSort(t);
+                                networkSuccessWork.work();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<PrivateTaskVO> call, Throwable t) {
+
+                        }
+                    });
+                }
             }
 
             @Override

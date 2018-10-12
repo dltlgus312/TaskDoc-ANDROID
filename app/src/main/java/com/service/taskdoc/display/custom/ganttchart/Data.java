@@ -9,9 +9,9 @@ import java.util.List;
 public class Data {
 
     /*
-    *  Main Value
-    *
-    * */
+     *  Main Value
+     *
+     * */
 
     private Calendar startDate;
     private Calendar endDate;
@@ -23,7 +23,7 @@ public class Data {
 
     private int totalDays;
 
-    private int itemCount;
+    int itemCount;
 
 
     private Paint backgroundColor;
@@ -42,7 +42,7 @@ public class Data {
         toDayOfWeek = Calendar.getInstance();
         startDate = Calendar.getInstance();
         endDate = Calendar.getInstance();
-        toDayOfWeek.add(Calendar.DATE, -(toDay.get(Calendar.DAY_OF_WEEK)-1));
+        toDayOfWeek.add(Calendar.DATE, -(toDay.get(Calendar.DAY_OF_WEEK) - 1));
 
         backgroundColor = new Paint();
         textColor = new Paint();
@@ -99,23 +99,23 @@ public class Data {
 
             if (b.isDivision()) continue;
 
-            b.drawBar(getPositionX(b.getSdate()), getPositionY(i),
-                    getPositionX(b.getEdate()), getPositionY(i+1)-10, canvas);
+            b.drawBar(dateToPositionX(b.getSdate()), getPositionY(i),
+                    dateToPositionX(b.getEdate()), getPositionY(i + 1) - 10, canvas);
 
-            if (b.getArrowList() != null){
-                for (int j: b.getArrowList()){
+            if (b.getArrowList() != null) {
+                for (int j : b.getArrowList()) {
 
                     if (bars.size() <= j) continue; // 임시 ####
 
-                   BarItem item = bars.get(j);
-                    b.drawArrow(getPositionX(item.getSdate()), getPositionY(j)+10, canvas);
+                    BarItem item = bars.get(j);
+                    b.drawArrow(dateToPositionX(item.getSdate()), getPositionY(j) + 10, canvas);
                 }
             }
 
-            if (b.getOnTheBarItems() != null && b.getOnTheBarItems().size() > 0){
-                for (OnTheBarItem bi : b.getOnTheBarItems()){
-                    bi.draw(getPositionX(bi.getSdate()), getPositionY(i),
-                            getPositionX(bi.getEdate()), getPositionY(i+1)-10, canvas);
+            if (b.getOnTheBarItems() != null && b.getOnTheBarItems().size() > 0) {
+                for (OnTheBarItem bi : b.getOnTheBarItems()) {
+                    bi.draw(dateToPositionX(bi.getSdate()), getPositionY(i),
+                            dateToPositionX(bi.getEdate()), getPositionY(i + 1) - 10, canvas);
                 }
             }
 
@@ -132,20 +132,20 @@ public class Data {
         else drawTitleDayMode(canvas);
     }
 
-    void drawTitleWeekMode(Canvas canvas){
+    void drawTitleWeekMode(Canvas canvas) {
 
         float widthUnitTop = chart.width * chart.TOPWIDTHMONTHUNIT;
-        float startWidthTextTop = widthUnitTop  - (widthUnitTop / 2) + (chart.positionX % widthUnitTop);
+        float startWidthTextTop = widthUnitTop - (widthUnitTop / 2) + (chart.positionX % widthUnitTop);
         int stackM = (int) (-chart.positionX / widthUnitTop);
 
         int month = startDate.get(Calendar.MONTH);
-        int year =  startDate.get(Calendar.YEAR);
+        int year = startDate.get(Calendar.YEAR);
 
         int startMonth = (month + stackM) % 12;
         int startYear = year + (month + stackM) / 12;
 
         // 이번주 박스
-        canvas.drawRect(getPositionX(toDayOfWeek), chart.topHeight, getPositionX(toDayOfWeek) + chart.width
+        canvas.drawRect(dateToPositionX(toDayOfWeek), chart.topHeight, dateToPositionX(toDayOfWeek) + chart.width
                 , chart.topHeight * 2, toDayColor);
 
 
@@ -157,10 +157,10 @@ public class Data {
                 startYear++;
             }
 
-            if(chart.positionX > 0 && startMonth <= month) continue;
+            if (chart.positionX > 0 && startMonth <= month) continue;
 
             canvas.drawText(startYear + "." + startMonth + "월",
-                    startWidthTextTop, chart.topHeight / 2  + textColor.getTextSize() * 0.4f, textColor);
+                    startWidthTextTop, chart.topHeight / 2 + textColor.getTextSize() * 0.4f, textColor);
         }
 
 
@@ -168,9 +168,9 @@ public class Data {
         float startWidthTextBot = (chart.width / 2) + (chart.positionX % chart.width);
         int index = (int) (-chart.positionX / chart.width) - startWeekOfMonth + 2;
 
-        for (; startWidthTextBot<= chart.getWidth(); startWidthTextBot += chart.width, index++) {
+        for (; startWidthTextBot <= chart.getWidth(); startWidthTextBot += chart.width, index++) {
             String format = index + "주";
-            if (index < 1)continue;
+            if (index < 1) continue;
 
             float width = textColor.measureText(format, 0, format.length());
             canvas.drawText(format, startWidthTextBot - (width / 2),
@@ -178,15 +178,15 @@ public class Data {
         }
     }
 
-    void drawTitleDayMode(Canvas canvas){
+    void drawTitleDayMode(Canvas canvas) {
 
         int indexTop = (int) (-chart.positionX / chart.width) - startWeekOfMonth + 2;
         float startWidthTextTop = (chart.width / 2) + (chart.positionX % chart.width);
 
         // Top Draw
-        for (; startWidthTextTop<= chart.getWidth(); startWidthTextTop += chart.width, indexTop++) {
+        for (; startWidthTextTop <= chart.getWidth(); startWidthTextTop += chart.width, indexTop++) {
             String format = indexTop + "주";
-            if (indexTop < 1)continue;
+            if (indexTop < 1) continue;
 
             float width = textColor.measureText(format, 0, format.length());
             canvas.drawText(format, startWidthTextTop - (width / 2),
@@ -196,11 +196,11 @@ public class Data {
 
         // Bottom Draw
         float widthUnitBot = chart.width / GanttChart.TOPWIDTHWEEKUNIT;
-        int indexBot = (int) (-chart.positionX / widthUnitBot) - ((startWeekOfMonth-1) * GanttChart.TOPWIDTHWEEKUNIT) - startDayOfWeek + 1;
+        int indexBot = (int) (-chart.positionX / widthUnitBot) - ((startWeekOfMonth - 1) * GanttChart.TOPWIDTHWEEKUNIT) - startDayOfWeek + 1;
         float startWidthTextBot = widthUnitBot / 2 + (chart.positionX % widthUnitBot);
 
         // 오늘 박스
-        canvas.drawRect(getPositionX(toDay), chart.topHeight, getPositionX(toDay) + widthUnitBot
+        canvas.drawRect(dateToPositionX(toDay), chart.topHeight, dateToPositionX(toDay) + widthUnitBot
                 , chart.topHeight * 2, toDayColor);
 
         Calendar refDate = Calendar.getInstance();
@@ -210,11 +210,11 @@ public class Data {
         for (; startWidthTextBot <= chart.getWidth(); startWidthTextBot += widthUnitBot) {
 
             int dayOfWeek = refDate.get(Calendar.DAY_OF_WEEK);
-            switch (dayOfWeek){
-                case 1 :
+            switch (dayOfWeek) {
+                case 1:
                     textColor.setColor(chart.redColor);
                     break;
-                case 7 :
+                case 7:
                     textColor.setColor(chart.blueColor);
                     break;
                 default:
@@ -222,7 +222,7 @@ public class Data {
                     break;
             }
 
-            String format = refDate.get(Calendar.MONTH)+1 + "." + refDate.get(Calendar.DATE);
+            String format = refDate.get(Calendar.MONTH) + 1 + "." + refDate.get(Calendar.DATE);
             float width = textColor.measureText(format, 0, format.length());
 
             canvas.drawText(format, startWidthTextBot - (width / 2),
@@ -244,7 +244,7 @@ public class Data {
      *
      * */
 
-    float getPositionX(Calendar date) {
+    float dateToPositionX(Calendar date) {
 
         if (date == null) return 0;
 
@@ -254,6 +254,24 @@ public class Data {
         float positionX = chart.width * (startWeekOfMonth - 1) + (weekUnit * startDayOfWeek) + (weekUnit * diff) + chart.positionX;
 
         return positionX;
+    }
+
+    Calendar xPositionToDate(float x) {
+        Calendar calendar = Calendar.getInstance();
+
+        calendar.setTime(startDate.getTime());
+
+        float weekUnit = chart.width / chart.TOPWIDTHWEEKUNIT;
+
+        float positionX = (-chart.positionX) + x;
+
+        int stackDay = (int) Math.floor(positionX / weekUnit);
+
+        int beforeDay = (startWeekOfMonth - 1) * 7 + startDayOfWeek - 2;
+
+        calendar.add(Calendar.DATE, stackDay - beforeDay);
+
+        return calendar;
     }
 
     float getPositionY(int index) {
@@ -283,21 +301,11 @@ public class Data {
             if (item.getSdate() == null) continue;
 
             if (item.getOnTheBarDrawClickListener() == null && onTheBarDrawClickListener != null) {
-                item.setOnTheBarDrawClickListener(new GanttChart.OnTheBarDrawClickListener() {
-                    @Override
-                    public void itemSelect(BarItem barItem, List<OnTheBarItem> onTheBarItemItem) {
-                        onTheBarDrawClickListener.itemSelect(barItem, onTheBarItemItem);
-                    }
-                });
+                item.setOnTheBarDrawClickListener(onTheBarDrawClickListener);
             }
 
             if (item.getOnBarClickListener() == null && onBarClickListener != null) {
-                item.setOnBarClickListener(new GanttChart.OnBarClickListener() {
-                    @Override
-                    public void itemSelect(BarItem barItem) {
-                        onBarClickListener.itemSelect(barItem);
-                    }
-                });
+                item.setOnBarClickListener(onBarClickListener);
             }
 
             if (startDate.compareTo(item.getSdate()) > 0) {
@@ -324,48 +332,35 @@ public class Data {
      *
      * */
 
-    BarItem onClick(float x, float y) {
-
+    boolean onClick(float x, float y) {
         for (BarItem bar : bars) {
-            if (bar.isBarClicked()) {
-                bar.closeClick();
-                bar.closeLongClick();
-            }
-        }
-
-        for (BarItem bar : bars) {
-            if (bar.clickPosition(x, y)){
-                if (bar.isBarClicked()){
-                    return bar;
-                }else if (bar.isTitleClicked()){
+            if (bar.clickPosition(x, y)) {
+                if (bar.isTitleClicked()) {
                     chart.setFloodingX(-(bar.getLeft() - chart.getWidth() / 3));
                     bar.setTitleClicked(false);
-                    return null;
                 }
-            };
-        }
-        return null;
-    }
-
-    void onLongClick(float x, float y) {
-        for (BarItem bar : bars) {
-            if (bar.isBarClicked()) {
-                bar.closeClick();
-                bar.closeLongClick();
+                return true;
             }
         }
+        return false;
+    }
 
+    BarItem onLongClick(float x, float y) {
         for (BarItem bar : bars) {
-            bar.longClick(x, y);
+            if (bar.longClickRef(x, y)) {
+                bar.setLongClick();
+                return bar;
+            }
         }
+        return null;
     }
 
 
 
     /*
-    *  Listener
-    *
-    * */
+     *  Listener
+     *
+     * */
 
     GanttChart.OnTheBarDrawClickListener onTheBarDrawClickListener;
 
@@ -388,8 +383,8 @@ public class Data {
     }
 
     /*
-    * Getter, Setter
-    * */
+     * Getter, Setter
+     * */
 
     public Calendar getToDay() {
         return toDay;
@@ -397,5 +392,9 @@ public class Data {
 
     public void setToDay(Calendar toDay) {
         this.toDay = toDay;
+    }
+
+    public float getTextSize() {
+        return textColor.getTextSize();
     }
 }

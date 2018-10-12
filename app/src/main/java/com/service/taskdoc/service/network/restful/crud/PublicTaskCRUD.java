@@ -22,6 +22,9 @@ public interface PublicTaskCRUD {
     @GET("/publictask/all/{pcode}/{uid}")
     Call<Map<String, Object>> getListAll(@Path("pcode") int pcode, @Path("uid") String uid);
 
+    @GET("/publictask/publicTaskView/{tcode}")
+    Call<PublicTaskVO> getPublictaskView(@Path("tcode") int tcode);
+
     @POST("/publictask")
     Call<Integer> createPublicTask(@Body PublicTaskVO publicTaskVO);
 

@@ -31,7 +31,6 @@ public class RequestBuilder {
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(getOkHttpDownloadClientBuilder(listener).build())
                 .build().create(serviceClass);
-
     }
 
     public static OkHttpClient.Builder getOkHttpDownloadClientBuilder(OnAttachmentDownloadListener progressListener) {
