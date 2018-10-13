@@ -90,7 +90,7 @@ public class Element extends Fragment implements TaskCycle.ClickListener, TaskCy
         recyclerView.setAdapter(cycle);
         cycle.init();
 
-        if(cycle.getItemCount() > 0){
+        if (cycle.getItemCount() > 0) {
             banner.setVisibility(View.GONE);
         }
 
@@ -126,8 +126,6 @@ public class Element extends Fragment implements TaskCycle.ClickListener, TaskCy
                 return super.onContextItemSelected(item);
         }
     }
-
-
 
 
     public void deleteView() {
@@ -216,22 +214,17 @@ public class Element extends Fragment implements TaskCycle.ClickListener, TaskCy
             service.work(new NetworkSuccessWork() {
                 @Override
                 public void work(Object... objects) {
-                    int result = (int) objects[0];
-                    if (result != 1) {
-                        Task task = (Task) getParentFragment();
-                    } else {
-                        cycle.notifyDataSetChanged();
-                    }
+                    cycle.notifyDataSetChanged();
                 }
             });
         }
     }
 
-    public void dataChange(){
-        if (cycle != null){
+    public void dataChange() {
+        if (cycle != null) {
             cycle.goTo(0);
             recyclerView.scheduleLayoutAnimation();
-            path.removeViews(+ 1, path.getChildCount() - 1);
+            path.removeViews(+1, path.getChildCount() - 1);
             cycle.notifyDataSetChanged();
         }
     }
@@ -353,14 +346,13 @@ public class Element extends Fragment implements TaskCycle.ClickListener, TaskCy
         memoService.work(new NetworkSuccessWork() {
             @Override
             public void work(Object... objects) {
-                if(objects.length > 0 && objects[0] instanceof Integer){
+                if (objects.length > 0 && objects[0] instanceof Integer) {
                     int result = (int) objects[0];
 
-                    if(result == -1){
+                    if (result == -1) {
                         Task task = (Task) getParentFragment();
                     }
-                }
-                else if (objects.length > 0 && objects[0] instanceof List) {
+                } else if (objects.length > 0 && objects[0] instanceof List) {
                     memos.addAll((List<MemoVO>) objects[0]);
                 }
                 memoCycle.notifyDataSetChanged();
@@ -454,8 +446,6 @@ public class Element extends Fragment implements TaskCycle.ClickListener, TaskCy
 
         builder.show();
     }
-
-
 
 
     public void setTasks(Tasks tasks) {

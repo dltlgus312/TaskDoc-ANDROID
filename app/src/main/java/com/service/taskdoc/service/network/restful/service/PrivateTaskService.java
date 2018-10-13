@@ -34,21 +34,21 @@ public class PrivateTaskService {
         this.tasks = tasks;
     }
 
-    public void work(NetworkSuccessWork networkSuccessWork){
+    public void work(NetworkSuccessWork networkSuccessWork) {
         this.networkSuccessWork = networkSuccessWork;
     }
 
-    public PrivateTaskService(){
+    public PrivateTaskService() {
         service = RequestBuilder.createService(PrivateTaskCRUD.class);
     }
 
-    public void list(int tcode){
+    public void list(int tcode) {
         Call<List<PrivateTaskVO>> request = service.getPrivateTaskList(tcode);
         request.enqueue(new Callback<List<PrivateTaskVO>>() {
             @Override
             public void onResponse(Call<List<PrivateTaskVO>> call, Response<List<PrivateTaskVO>> response) {
                 List<PrivateTaskVO> result = response.body();
-                if(result.size() > 0){
+                if (result.size() > 0) {
                     networkSuccessWork.work(result);
                 }
             }
@@ -60,12 +60,12 @@ public class PrivateTaskService {
         });
     }
 
-    public void list(String uid){
+    public void list(String uid) {
         Call<List<PrivateTaskVO>> request = service.getPrivateTaskList(uid);
         request.enqueue(new Callback<List<PrivateTaskVO>>() {
             @Override
             public void onResponse(Call<List<PrivateTaskVO>> call, Response<List<PrivateTaskVO>> response) {
-                if(response.body() != null && response.body().size() > 0){
+                if (response.body() != null && response.body().size() > 0) {
                     List<PrivateTaskVO> result = response.body();
 
                     for (PrivateTaskVO vo : result) {
@@ -95,18 +95,18 @@ public class PrivateTaskService {
         });
     }
 
-    public void create(PrivateTaskVO vo){
+    public void create(PrivateTaskVO vo) {
         Call<Integer> request = service.createPrivateTask(vo);
         request.enqueue(new Callback<Integer>() {
             @Override
             public void onResponse(Call<Integer> call, Response<Integer> response) {
 
-                if (response.body() != -1){
+                if (response.body() != -1) {
                     Call<PrivateTaskVO> requestView = service.getPrivateTaskView(response.body());
                     requestView.enqueue(new Callback<PrivateTaskVO>() {
                         @Override
                         public void onResponse(Call<PrivateTaskVO> call, Response<PrivateTaskVO> response) {
-                            if (response.body() != null){
+                            if (response.body() != null) {
                                 Task t = new Task();
 
                                 PrivateTaskVO privateTaskVO = response.body();
@@ -141,7 +141,7 @@ public class PrivateTaskService {
         });
     }
 
-    public void update(PrivateTaskVO privateTaskVO){
+    public void update(PrivateTaskVO privateTaskVO) {
         Call<Integer> request = service.updatePrivateTask(privateTaskVO);
         request.enqueue(new Callback<Integer>() {
             @Override
@@ -157,26 +157,14 @@ public class PrivateTaskService {
         });
     }
 
-    public void updateList(List<Task> tasks){
-        for (Task t : tasks){
-            PrivateTaskVO v = new PrivateTaskVO();
-
-            v.setTcode(t.getReftcode());
-            v.setPtcode(t.getCode());
-            v.setPttitle(t.getTitle());
-            v.setPtsdate(t.getSdate());
-            v.setPtedate(t.getEdate());
-            v.setPtcolor(t.getColor());
-            v.setPtpercent(t.getPercent());
-            v.setPtrefference(t.getRefference());
-            v.setPtsequence(t.getSequence());
-            v.setUid(UserInfo.getUid());
-
-            update(v);
+    public void updateList(List<Task> tasks) {
+        for (Task t : tasks) {
+            PrivateTaskVO vo = Tasks.privateConverter(t);
+            update(vo);
         }
     }
 
-    public void delete(int ptcode){
+    public void delete(int ptcode) {
         Call<Integer> request = service.deletePrivateTask(ptcode);
         request.enqueue(new Callback<Integer>() {
             @Override

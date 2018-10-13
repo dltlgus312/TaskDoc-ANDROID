@@ -199,18 +199,7 @@ public class PublicTaskService {
 
     public void updateList(List<Task> tasks){
         for (Task t : tasks){
-            PublicTaskVO v = new PublicTaskVO();
-
-            v.setPcode(t.getRefpcode());
-            v.setTcode(t.getCode());
-            v.setTtitle(t.getTitle());
-            v.setTsdate(t.getSdate());
-            v.setTedate(t.getEdate());
-            v.setTcolor(t.getColor());
-            v.setTpercent(t.getPercent());
-            v.setTsequence(t.getSequence());
-            v.setTrefference(t.getRefference());
-
+            PublicTaskVO v = Tasks.publicConverter(t);
             update(v);
         }
     }
