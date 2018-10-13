@@ -104,7 +104,7 @@ public class PublicTaskService {
                     for (PublicTaskVO vo : publicVos) {
                         Task t = new Task();
 
-                        PublicTaskVO v = (PublicTaskVO) vo;
+                        PublicTaskVO v = vo;
                         t.setCode(v.getTcode());
                         t.setTitle(v.getTtitle());
                         t.setColor(v.getTcolor());
@@ -134,7 +134,7 @@ public class PublicTaskService {
                             t.setSequence(v.getPtsequence());
                             t.setReftcode(v.getTcode());
 
-                            tasks.getPrivateTasks().add(t);
+                            tasks.addSort(t);
                         }
 
                     }
@@ -186,8 +186,8 @@ public class PublicTaskService {
         request.enqueue(new Callback<Integer>() {
             @Override
             public void onResponse(Call<Integer> call, Response<Integer> response) {
-                Integer result = response.body();
-                networkSuccessWork.work(result);
+                if (response.body() == 1)
+                    networkSuccessWork.work(publicTaskVO);
             }
 
             @Override
@@ -195,6 +195,24 @@ public class PublicTaskService {
                 Log.d(TAG, t.getMessage());
             }
         });
+    }
+
+    public void updateList(List<Task> tasks){
+        for (Task t : tasks){
+            PublicTaskVO v = new PublicTaskVO();
+
+            v.setPcode(t.getRefpcode());
+            v.setTcode(t.getCode());
+            v.setTtitle(t.getTitle());
+            v.setTsdate(t.getSdate());
+            v.setTedate(t.getEdate());
+            v.setTcolor(t.getColor());
+            v.setTpercent(t.getPercent());
+            v.setTsequence(t.getSequence());
+            v.setTrefference(t.getRefference());
+
+            update(v);
+        }
     }
 
     public void delete(int tcode){

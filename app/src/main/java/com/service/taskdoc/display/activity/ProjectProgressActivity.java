@@ -32,10 +32,12 @@ import com.service.taskdoc.database.transfer.ChatRoomVO;
 import com.service.taskdoc.database.transfer.DecisionVO;
 import com.service.taskdoc.database.transfer.DocumentVO;
 import com.service.taskdoc.database.transfer.NoticeVO;
+import com.service.taskdoc.database.transfer.PrivateTaskVO;
 import com.service.taskdoc.database.transfer.ProjectJoinVO;
 import com.service.taskdoc.database.transfer.PublicTaskVO;
 import com.service.taskdoc.database.transfer.UserInfoVO;
 import com.service.taskdoc.display.custom.custom.chart.DocOnTheBarItem;
+import com.service.taskdoc.display.custom.custom.chart.TaskBarItem;
 import com.service.taskdoc.display.transitions.progress.Tab1;
 import com.service.taskdoc.display.transitions.progress.Tab2;
 import com.service.taskdoc.display.transitions.progress.Tab3;
@@ -593,6 +595,33 @@ public class ProjectProgressActivity extends AppCompatActivity
                 DocumentVO docVo = new Gson().fromJson(object, DocumentVO.class);
                 Toast.makeText(this, "(자료) \"" + docVo.getDmtitle() + "\" 의 업무 위치가 변경 되었습니다."
                         , Toast.LENGTH_SHORT).show();
+                break;
+            case StompBuilder.PUBLICTASK :
+                PublicTaskVO publicTaskVO = new Gson().fromJson(object, PublicTaskVO.class);
+                for (Task t : tasks.getPublicTasks()){
+                    if (t.getCode() == publicTaskVO.getTcode()){
+                        t.setTitle(publicTaskVO.getTtitle());
+                        t.setSdate(publicTaskVO.getTsdate());
+                        t.setEdate(publicTaskVO.getTedate());
+                        t.setPercent(publicTaskVO.getTpercent());
+                        t.setColor(publicTaskVO.getTcolor());
+                    }
+                }
+                tab1.taskViewRefresh();
+                break;
+            case StompBuilder.PRIVATETASK :
+                PrivateTaskVO privateTaskVO = new Gson().fromJson(object, PrivateTaskVO.class);
+                if (!privateTaskVO.getUid().equals(UserInfo.getUid())) return;
+
+                for (Task t : tasks.getPrivateTasks()){
+                    if (t.getCode() == privateTaskVO.getPtcode()){
+                        t.setTitle(privateTaskVO.getPttitle());
+                        t.setSdate(privateTaskVO.getPtsdate());
+                        t.setEdate(privateTaskVO.getPtedate());
+                        t.setPercent(privateTaskVO.getPtpercent());
+                        t.setColor(privateTaskVO.getPtcolor());
+                    }
+                }
                 break;
 
         }

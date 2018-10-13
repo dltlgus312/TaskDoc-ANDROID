@@ -3,7 +3,11 @@ package com.service.taskdoc.display.custom.ganttchart;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.service.taskdoc.database.transfer.PrivateTaskVO;
+
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 public class TouchListenerChart implements View.OnTouchListener {
 
@@ -24,7 +28,6 @@ public class TouchListenerChart implements View.OnTouchListener {
     float centerW, centerH;
 
 
-
     boolean moving = false;
     boolean zooming = false;
     boolean zoomingW = false;
@@ -36,6 +39,15 @@ public class TouchListenerChart implements View.OnTouchListener {
         this.chart = chart;
     }
 
+    GanttChart.OnBarClickModifyListener onBarClickModifyListener;
+
+    public GanttChart.OnBarClickModifyListener getOnBarClickModifyListener() {
+        return onBarClickModifyListener;
+    }
+
+    public void setOnBarClickModifyListener(GanttChart.OnBarClickModifyListener onBarClickModifyListener) {
+        this.onBarClickModifyListener = onBarClickModifyListener;
+    }
 
     /*
      * Touch Service
@@ -85,13 +97,28 @@ public class TouchListenerChart implements View.OnTouchListener {
                     }
 
                     if (!chart.isClickedItem() || !chart.longClickItem.isModifyClick()) {
-                        if (chart.isClickedItem()) chart.closeClickeditem();
-                        else {
+                        if (chart.isClickedItem()) {
+
+                            // GanttChart Min 제한을 걸어두지 않았으면서, 최소 일자를 초과한 경우 다시 그려준다.
+                            if (chart.getMinDate() == null &&
+                                    chart.longClickItem.getSdate().compareTo(chart.data.startDate) <= 0) {
+                                chart.data.changeData();
+                            }
+
+                            // 수정 완료
+                            if (onBarClickModifyListener != null) {
+                                onBarClickModifyListener.itemModifyClose(modifiedBar());
+                            }
+
+                            chart.closeClickeditem();
+                        } else {
+                            // 클릭
                             if (!chart.onClick(touchX, touchY))
                                 chart.doubleClickCount = chart.DOUBLECLICKCOUNT;
                         }
                     }
                 }
+
                 moving = false;
                 zooming = false;
                 zoomingW = false;
@@ -182,6 +209,7 @@ public class TouchListenerChart implements View.OnTouchListener {
         }
     }
 
+    // 차트 움직임
     void actionMoveChart(float x, float y) {
         float distanceX = x - touchX;
         float distanceY = y - touchY;
@@ -202,23 +230,210 @@ public class TouchListenerChart implements View.OnTouchListener {
         touchY = y;
     }
 
+    // 수정 바 움직임
     void actionRefBarITem(float x) {
+        moving = true;
+
         if (chart.longClickItem.isPercentClicked()) {
-            moving = true;
+            // 퍼센트 버튼 수정
             int percent = (int) ((x - chart.longClickItem.getLeft()) / chart.longClickItem.getPercentage());
             chart.longClickItem.setPercent(percent);
         } else if (chart.longClickItem.isMoveClicked()) {
-            moving = true;
-            Calendar cal = chart.data.xPositionToDate(x);
-            int diff = chart.data.diffDay(chart.longClickItem.getCenterDate(), cal);
-            chart.longClickItem.moveBar(diff);
-            chart.longClickItem.setCenterDate(cal);
+            moveCenter(x);
         } else if (chart.longClickItem.issDateClicked()) {
-            moving = true;
-            chart.longClickItem.addSdate(chart.data.xPositionToDate(x));
+            moveLeft(x);
         } else if (chart.longClickItem.iseDateClicked()) {
-            moving = true;
-            chart.longClickItem.addEdate(chart.data.xPositionToDate(x));
+            moveRight(x);
+        }
+    }
+
+    // 중앙버튼 수정
+    void moveCenter(float x) {
+
+        Calendar cal = chart.data.xPositionToDate(x);
+        int day = chart.data.diffDay(chart.longClickItem.getCenterDate(), cal);
+
+        if (chart.getMinDate() == null ||
+                chart.longClickItem.getSdate().compareTo(chart.getMinDate()) >= 0 || day > 0) {
+
+            // 부모를 벗어나지 못할 경우
+            if (chart.isParentsOverMoveImpossible()) {
+
+                if (chart.longClickItem.getParents() != null) {
+                    if (day < 0 && compareTo(chart.longClickItem.getSdate(), day, chart.longClickItem.getParents().getSdate()) >= 0) {
+                        chart.longClickItem.moveBar(day);
+                        moveToChild(chart.longClickItem.getArrowList(), day);
+                    } else if (day > 0 && compareTo(chart.longClickItem.getEdate(), day, chart.longClickItem.getParents().getEdate()) <= 0) {
+                        chart.longClickItem.moveBar(day);
+                        moveToChild(chart.longClickItem.getArrowList(), day);
+                    }
+                } else {
+                    chart.longClickItem.moveBar(day);
+                    moveToChild(chart.longClickItem.getArrowList(), day);
+                }
+            }
+
+            // 부모를 벗어나도 되는 경우
+            else {
+                chart.longClickItem.moveBar(day);
+            }
+
+        }
+
+        // 업데이트
+        chart.longClickItem.setCenterDate(cal);
+    }
+
+    // 왼쪽버튼 날짜 수정
+    void moveLeft(float x) {
+        Calendar sdate = chart.data.xPositionToDate(x);
+        int day = chart.data.diffDay(chart.longClickItem.getSdate(), sdate) - 1;
+
+        if (chart.getMinDate() == null || chart.longClickItem.getSdate().compareTo(chart.getMinDate()) >= 0 || day > 0) {
+            if (chart.isParentsOverMoveImpossible()) {
+                // 부모가 있다면
+                if (chart.longClickItem.getParents() != null) {
+                    // 부모의 sdate를 감시
+                    if (compareTo(chart.longClickItem.getSdate(), day, chart.longClickItem.getParents().getSdate()) >= 0 || day > 0) {
+                        // 자식크기를 변경 할 수 있다면..
+                        if (isAddLeftToChild(chart.longClickItem.getArrowList(), day)) {
+                            chart.longClickItem.addSdate(day);
+                            addLeftToChild(chart.longClickItem.getArrowList(), day);
+                        } else {
+                            return;
+                        }
+                    }
+                } else {
+                    if (isAddLeftToChild(chart.longClickItem.getArrowList(), day)) {
+                        chart.longClickItem.addSdate(day);
+                        addLeftToChild(chart.longClickItem.getArrowList(), day);
+                    }
+                }
+            } else if (chart.longClickItem.isAddSdate(day))chart.longClickItem.addSdate(day);
+        }
+    }
+
+    // 오른쪽 버튼 날짜 수정
+    void moveRight(float x) {
+
+        Calendar edate = chart.data.xPositionToDate(x);
+        int day = chart.data.diffDay(chart.longClickItem.getEdate(), edate);
+
+        if (chart.isParentsOverMoveImpossible()) {
+            // 부모가 있다면
+            if (chart.longClickItem.getParents() != null) {
+                // 부모의 sdate를 감시
+                int a = compareTo(chart.longClickItem.getEdate(), day, chart.longClickItem.getParents().getEdate());
+                if (a<=0 || day < 0) {
+                    // 자식크기를 변경 할 수 있다면..
+                    if (isAddRightToChild(chart.longClickItem.getArrowList(), day)) {
+                        chart.longClickItem.addEdate(day);
+                        addRightToChild(chart.longClickItem.getArrowList(), day);
+                    } else {
+                        return;
+                    }
+                }
+            } else {
+                if (isAddRightToChild(chart.longClickItem.getArrowList(), day)) {
+                    chart.longClickItem.addEdate(day);
+                    addRightToChild(chart.longClickItem.getArrowList(), day);
+                }
+            }
+        } else
+            if (chart.longClickItem.isAddEdate(day)) chart.longClickItem.addEdate(day);
+    }
+
+
+    /*
+    * 자식바 재귀함수
+    * */
+    void moveToChild(List<Integer> list, int day) {
+        if (list == null) return;
+        else {
+            for (int index : list) {
+                BarItem item = chart.data.bars.get(index);
+                item.moveBar(day);
+                moveToChild(item.getArrowList(), day);
+            }
+        }
+    }
+
+    boolean isAddLeftToChild(List<Integer> list, int day) {
+        if (list == null) return true;
+        else {
+            for (int index : list) {
+                BarItem item = chart.data.bars.get(index);
+                if (!item.isAddSdate(day)) {
+                    return false;
+                }
+                if (!isAddLeftToChild(item.getArrowList(), day)) return false;
+            }
+            return true;
+        }
+    }
+
+    void addLeftToChild(List<Integer> list, int day) {
+        if (list == null) return;
+        else {
+            for (int index : list) {
+                BarItem item = chart.data.bars.get(index);
+                item.addSdate(day);
+                addLeftToChild(item.getArrowList(), day);
+            }
+        }
+    }
+
+    boolean isAddRightToChild(List<Integer> list, int day) {
+        if (list == null) return true;
+        else {
+            for (int index : list) {
+                BarItem item = chart.data.bars.get(index);
+                if (!item.isAddEdate(day)) {
+                    return false;
+                }
+                if (!isAddRightToChild(item.getArrowList(), day)) return false;
+            }
+            return true;
+        }
+    }
+
+    void addRightToChild(List<Integer> list, int day) {
+        if (list == null) return;
+        else {
+            for (int index : list) {
+                BarItem item = chart.data.bars.get(index);
+                item.addEdate(day);
+                addRightToChild(item.getArrowList(), day);
+            }
+        }
+    }
+
+    int compareTo(Calendar target, int day, Calendar cal) {
+        // 후에 정밀한 비교... (아마도 시간단위 혹은 초단위...?)
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(target.getTime());
+        calendar.add(Calendar.DATE, day);
+
+        return calendar.compareTo(cal);
+    }
+
+    List<BarItem> modifiedBar(){
+        List<BarItem> list = new ArrayList<>();
+
+        list.add(chart.longClickItem);
+
+        modifyChild(list, chart.longClickItem.getArrowList());
+
+        return list;
+    }
+
+    void modifyChild(List<BarItem> list, List<Integer> arrowList){
+        if (arrowList == null) return;
+
+        for (int index : arrowList){
+            BarItem item = chart.data.bars.get(index);
+            list.add(item);
+            modifyChild(list, item.getArrowList());
         }
     }
 

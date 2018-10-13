@@ -379,6 +379,7 @@ public class Element extends Fragment implements TaskCycle.ClickListener, TaskCy
             }
         });
 
+        // 스크롤 안에 스크롤이 가능하게 해주는.......
         RecyclerView.OnItemTouchListener mScrollTouchListener = new RecyclerView.OnItemTouchListener() {
             @Override
             public boolean onInterceptTouchEvent(RecyclerView rv, MotionEvent e) {

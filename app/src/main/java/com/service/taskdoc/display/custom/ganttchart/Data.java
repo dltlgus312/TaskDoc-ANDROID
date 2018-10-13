@@ -13,22 +13,22 @@ public class Data {
      *
      * */
 
-    private Calendar startDate;
-    private Calendar endDate;
-    private Calendar toDay;
-    private Calendar toDayOfWeek;
+    Calendar startDate;
+    Calendar endDate;
+    Calendar toDay;
+    Calendar toDayOfWeek;
 
-    private int startWeekOfMonth;
-    private int startDayOfWeek;
+    int startWeekOfMonth;
+    int startDayOfWeek;
 
-    private int totalDays;
+    int totalDays;
 
     int itemCount;
 
 
-    private Paint backgroundColor;
-    private Paint textColor;
-    private Paint toDayColor;
+    Paint backgroundColor;
+    Paint textColor;
+    Paint toDayColor;
 
     /*
      *  Reference
@@ -65,7 +65,7 @@ public class Data {
      * DATA
      * */
 
-    private List<? extends BarItem> bars;
+    List<? extends BarItem> bars;
 
     public void setBars(List<? extends BarItem> bars) {
         this.bars = bars;
@@ -104,9 +104,6 @@ public class Data {
 
             if (b.getArrowList() != null) {
                 for (int j : b.getArrowList()) {
-
-                    if (bars.size() <= j) continue; // 임시 ####
-
                     BarItem item = bars.get(j);
                     b.drawArrow(dateToPositionX(item.getSdate()), getPositionY(j) + 10, canvas);
                 }
@@ -296,6 +293,8 @@ public class Data {
         startDate.set(2100, 11, 31);
         endDate.set(2000, 0, 1);
 
+
+        // 리스너 등록
         for (BarItem item : bars) {
 
             if (item.getSdate() == null) continue;
@@ -308,14 +307,32 @@ public class Data {
                 item.setOnBarClickListener(onBarClickListener);
             }
 
-            if (startDate.compareTo(item.getSdate()) > 0) {
-                startDate.setTime(item.getSdate().getTime());
-            }
-
-            if (endDate.compareTo(item.getEdate()) < 0) {
-                endDate.setTime(item.getEdate().getTime());
+            // 부모 등록해주기...
+            if (item.getArrowList() != null){
+                for (int index : item.getArrowList()){
+                    BarItem i = bars.get(index);
+                    i.setParents(item);
+                }
             }
         }
+
+        if (chart.getMinDate() != null) {
+            startDate.setTime(chart.getMinDate().getTime());
+        } else {
+            // MIN Date 찾기
+            for (BarItem item : bars) {
+                if (item.getSdate() == null) continue;
+
+                if (startDate.compareTo(item.getSdate()) > 0) {
+                    startDate.setTime(item.getSdate().getTime());
+                }
+
+                if (endDate.compareTo(item.getEdate()) < 0) {
+                    endDate.setTime(item.getEdate().getTime());
+                }
+            }
+        }
+
 
         totalDays = diffDay(startDate, endDate);
 
@@ -378,7 +395,7 @@ public class Data {
         return onBarClickListener;
     }
 
-    public void setOnBarClickListener(GanttChart.OnBarClickListener onBarClickListener) {
+    void setOnBarClickListener(GanttChart.OnBarClickListener onBarClickListener) {
         this.onBarClickListener = onBarClickListener;
     }
 

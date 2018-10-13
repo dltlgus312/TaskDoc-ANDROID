@@ -51,6 +51,9 @@ public abstract class BarItem {
         modifyPaint.setColor(0x88f5f5dc);
         modifyPaint.setStrokeWidth(4);
 
+        highLightPaint = new Paint();
+        highLightPaint.setColor(Color.CYAN);
+
 
         depthArrow = 6;
     }
@@ -77,6 +80,7 @@ public abstract class BarItem {
     private Paint textPaint;
     private Paint strokePaint;
     private Paint modifyPaint;
+    private Paint highLightPaint;
     private int textColor;
 
     private float titleTextSize;
@@ -88,6 +92,8 @@ public abstract class BarItem {
     private float height;
 
     private float percentage;
+
+    private BarItem parents;
 
     private List<Integer> arrowList;
 
@@ -115,14 +121,14 @@ public abstract class BarItem {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             if (0 < highLightCount) {
-                canvas.drawRoundRect(left - 3, top - 3, right + 3, bottom + 3, 10, 10, modifyPaint);
+                canvas.drawRoundRect(left - 3, top - 3, right + 3, bottom + 3, 10, 10, highLightPaint);
                 highLightCount--;
             }
             canvas.drawRoundRect(left, top, right, bottom, 10, 10, background);
             canvas.drawRoundRect(left, top, left + percentage * percent, bottom, 10, 10, barColor);
         } else {
             if (0 < highLightCount) {
-                canvas.drawRect(left - 3, top - 3, right + 3, bottom + 3, modifyPaint);
+                canvas.drawRect(left - 3, top - 3, right + 3, bottom + 3, highLightPaint);
                 highLightCount--;
             }
             canvas.drawRect(left, top, right, bottom, background);
@@ -144,9 +150,16 @@ public abstract class BarItem {
 
     void drawArrow(float x, float y, Canvas canvas) {
 
-        canvas.drawLine(left, bottom - 10, left - depthArrow * 10, bottom - 10, barColor);
-        canvas.drawLine(left - depthArrow * 10, bottom - 10, left - depthArrow * 10, y, barColor);
-        canvas.drawLine(left - depthArrow * 10, y, x, y, barColor);
+        if (x < left) {
+            canvas.drawLine(left, bottom - 10, x - depthArrow * 10, bottom - 10, barColor);
+            canvas.drawLine(x - depthArrow * 10, bottom - 10, x - depthArrow * 10, y, barColor);
+            canvas.drawLine(x - depthArrow * 10, y, x, y, barColor);
+        } else {
+            canvas.drawLine(left, bottom - 10, left - depthArrow * 10, bottom - 10, barColor);
+            canvas.drawLine(left - depthArrow * 10, bottom - 10, left - depthArrow * 10, y, barColor);
+            canvas.drawLine(left - depthArrow * 10, y, x, y, barColor);
+        }
+
 
         canvas.drawLine(x - 10, y - 10, x, y, barColor);
         canvas.drawLine(x - 10, y + 10, x, y, barColor);
@@ -269,8 +282,6 @@ public abstract class BarItem {
         barLongClicked = false;
         modifyClick = true;
         textPaint.setColor(textColor);
-
-        if(onBarClickListener != null) onBarClickListener.itemModifyClose(this);
     }
 
     boolean modifyClickPosition(float x, float y) {
@@ -299,13 +310,12 @@ public abstract class BarItem {
         }
 
         if (percentClicked || moveClicked || sDateClicked || eDateClicked) modifyClick = true;
-        else if (x < right && x > left && y < bottom && y > top) modifyClick = true;
         else modifyClick = false;
 
         return modifyClick;
     }
 
-    boolean isModifyClick(){
+    boolean isModifyClick() {
         return modifyClick;
     }
 
@@ -391,11 +401,44 @@ public abstract class BarItem {
 
 
 
-
     /*
-     *
-     *  Getter, Setter
-     * */
+    * Modify Sevice
+    * */
+
+    public void moveBar(int day) {
+        this.sdate.add(Calendar.DATE, day);
+        this.edate.add(Calendar.DATE, day);
+        updateStartDate(sdate);
+        updateEndDate(edate);
+    }
+
+    public void addSdate(int day) {
+        this.sdate.add(Calendar.DATE, day);
+        updateStartDate(this.sdate);
+    }
+
+    boolean isAddSdate(int day){
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(sdate.getTime());
+        cal.add(Calendar.DATE, day);
+
+        if (edate.compareTo(cal) <= 0) return false;
+        return true;
+    }
+
+    public void addEdate(int day) {
+        this.edate.add(Calendar.DATE, day);
+        updateEndDate(edate);
+    }
+
+    boolean isAddEdate(int day){
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(edate.getTime());
+        cal.add(Calendar.DATE, day);
+
+        if (cal.compareTo(sdate) <= 0) return false;
+        return true;
+    }
 
     public void setPercent(int percent) {
         if (percent < 0) percent = 0;
@@ -403,6 +446,21 @@ public abstract class BarItem {
         this.percent = percent;
 
         updatePercent(percent);
+    }
+
+
+
+    /*
+     *
+     *  Getter, Setter
+     * */
+
+    BarItem getParents() {
+        return parents;
+    }
+
+    void setParents(BarItem parents) {
+        this.parents = parents;
     }
 
     public int getPercent() {
@@ -450,21 +508,6 @@ public abstract class BarItem {
         this.sdate = sdate;
     }
 
-    public void addSdate(Calendar sdate) {
-        sdate.add(Calendar.DATE, -1);
-        if (edate.compareTo(sdate) <= 0) return;
-
-        this.sdate = sdate;
-        updateStartDate(this.sdate);
-    }
-
-    public void moveBar(int day) {
-        this.sdate.add(Calendar.DATE, day);
-        this.edate.add(Calendar.DATE, day);
-        updateStartDate(sdate);
-        updateEndDate(edate);
-    }
-
     public Calendar getEdate() {
         return edate;
     }
@@ -473,13 +516,6 @@ public abstract class BarItem {
         this.edate = edate;
         this.edate.add(Calendar.DATE, 1);
     }
-
-    public void addEdate(Calendar edate) {
-        if(edate.compareTo(sdate) <= 0)return;
-        this.edate = edate;
-        updateEndDate(edate);
-    }
-
 
     public void setBarColor(String color) {
         this.color = color;

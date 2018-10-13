@@ -37,41 +37,66 @@ public class DecisionItemMakeCycle extends RecyclerView.Adapter<DecisionItemMake
 
     private List<DecisionItemVO> vos;
 
+    private List<MemoVO> memoVos;
+
     private android.support.v7.app.AlertDialog dialog;
 
     public DecisionItemMakeCycle() {
         vos = new ArrayList<>();
     }
 
+    public DecisionItemMakeCycle(List<MemoVO> memoVos) {
+        this.memoVos = memoVos;
+    }
 
     @Override
     public int getItemViewType(int position) {
-        if (position == vos.size()) {
-            return VIEW_ADD;
+        if (vos != null){
+            if (position == vos.size()) {
+                return VIEW_ADD;
+            } else {
+                return VIEW_LIST;
+            }
         } else {
-            return VIEW_LIST;
+            if (position == memoVos.size()) {
+                return VIEW_ADD;
+            } else {
+                return VIEW_LIST;
+            }
         }
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int i) {
         getItemViewType(i);
-        if (vos.size() == i) {
+        if (vos != null && vos.size() == i || memoVos != null && memoVos.size() == i) {
             // 추가 버튼
             LinearLayout linearLayout = viewHolder.linearLayout;
             linearLayout.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    DecisionItemVO vo = new DecisionItemVO();
-                    vo.setDsisequence(vos.size()+1);
-                    vos.add(vo);
+
+                    if (vos != null) {
+                        DecisionItemVO vo = new DecisionItemVO();
+                        vo.setDsisequence(vos.size() + 1);
+                        vos.add(vo);
+                    } else {
+                        MemoVO vo = new MemoVO();
+                        memoVos.add(vo);
+                    }
+
                     if (addClickRePositionListener != null)
                         addClickRePositionListener.onClick();
                 }
             });
         } else {
             // 목록 보여주기
-            DecisionItemVO vo = vos.get(i);
+            DecisionItemVO vo = null;
+            MemoVO memoVo = null;
+
+            if (vos != null)
+                vo = vos.get(i);
+            else memoVo = memoVos.get(i);
 
             EditText contents = viewHolder.contents;
             TextView modify = viewHolder.modify;
@@ -90,24 +115,32 @@ public class DecisionItemMakeCycle extends RecyclerView.Adapter<DecisionItemMake
                 }
             });
 
-            if (vo.getDsilist() == null) {
+            if (vo != null && vo.getDsilist() == null || memoVo != null && memoVo.getMcontents() == null) {
                 contents.setText("");
                 contents.requestFocus();
                 new KeyboardManager().show(contents.getContext());
                 setModifyMode(modify, delete, contents); //새로 작성
-            }
-            else {
-                contents.setText(vo.getDsilist());
-                setSuccessMode(modify, delete, contents);
+            } else {
+                if (vo != null)
+                    contents.setText(vo.getDsilist());
+                else
+                    contents.setText(memoVo.getMcontents());
+
+                setSuccessMode(modify, delete, contents, null);
             }
 
 
+            DecisionItemVO finalVo = vo;
+            MemoVO finalMemoVo = memoVo;
             contents.setOnKeyListener(new View.OnKeyListener() {
                 @Override
                 public boolean onKey(View v, int keyCode, KeyEvent event) {
                     //Enter key Action
                     if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-                        addElementsParam(modify, delete, contents, vo);
+                        if (finalVo != null)
+                            addElementsParam(modify, delete, contents, finalVo);
+                        else
+                            addElementsParam(modify, delete, contents, finalMemoVo);
                         return true;
                     }
                     return false;
@@ -122,7 +155,10 @@ public class DecisionItemMakeCycle extends RecyclerView.Adapter<DecisionItemMake
                     if (modify.getText().toString().equals(MODIFY)) {
                         setModifyMode(modify, delete, contents);
                     } else { // 수정완료 버튼
-                        addElementsParam(modify, delete, contents, vo);
+                        if (finalVo != null)
+                            addElementsParam(modify, delete, contents, finalVo);
+                        else
+                            addElementsParam(modify, delete, contents, finalMemoVo);
                     }
                 }
             });
@@ -131,10 +167,18 @@ public class DecisionItemMakeCycle extends RecyclerView.Adapter<DecisionItemMake
                 @Override
                 public void onClick(View view) {
                     if (delete.getText().toString().equals(DELETE)) {
-                        vos.remove(vo);
+                        if (finalVo != null)
+                            vos.remove(finalVo);
+                        else{
+                            if (sucessClickListener != null) sucessClickListener.onDelete(memoVos, finalMemoVo);
+                        }
+
                         notifyDataSetChanged();
                     } else {
-                        setSuccessMode(modify, delete, contents);
+                        if (finalVo != null)
+                            setSuccessMode(modify, delete, contents, null);
+                        else
+                            setSuccessMode(modify, delete, contents, finalMemoVo);
                     }
                 }
             });
@@ -142,45 +186,54 @@ public class DecisionItemMakeCycle extends RecyclerView.Adapter<DecisionItemMake
     }
 
 
-
-
-
-    public void setModifyMode(TextView modify, TextView delete, EditText contents){
+    public void setModifyMode(TextView modify, TextView delete, EditText contents) {
         modify.setText(SUCCESS);
         delete.setText(CANCLE);
         contents.setEnabled(true);
     }
 
-    public void setSuccessMode(TextView modify, TextView delete, EditText contents){
+    public void setSuccessMode(TextView modify, TextView delete, EditText contents, MemoVO vo) {
         modify.setText(MODIFY);
         delete.setText(DELETE);
         contents.setEnabled(false);
+
+        if(sucessClickListener != null && vo != null) sucessClickListener.onClick(vo, contents.getText().toString());
     }
 
-    public boolean addElementsParam(TextView modify, TextView delete, EditText contents, DecisionItemVO vo){
+    public boolean addElementsParam(TextView modify, TextView delete, EditText contents, DecisionItemVO vo) {
         String s = contents.getText().toString();
         if (s.equals("")) {
             Toast.makeText(dialog.getContext(),
                     "항목 이름이 너무 짧습니다.", Toast.LENGTH_SHORT).show();
             return false;
         } else {
-            setSuccessMode(modify, delete, contents);
+            setSuccessMode(modify, delete, contents, null);
             vo.setDsilist(s);
             return true;
         }
     }
 
-
+    public boolean addElementsParam(TextView modify, TextView delete, EditText contents, MemoVO vo) {
+        String s = contents.getText().toString();
+        if (s.equals("")) {
+            Toast.makeText(dialog.getContext(),
+                    "내용이 너무 짧습니다.", Toast.LENGTH_SHORT).show();
+            return false;
+        } else {
+            setSuccessMode(modify, delete, contents, vo);
+            return true;
+        }
+    }
 
 
     /*
-    * Creates Parameter Data
-    * */
+     * Creates Parameter Data
+     * */
     public List<DecisionItemVO> getVos() {
         List<DecisionItemVO> vos = new ArrayList<>();
 
-        for (DecisionItemVO vo : this.vos){
-            if (vo.getDsilist() != null && !vo.getDsilist().equals("")){
+        for (DecisionItemVO vo : this.vos) {
+            if (vo.getDsilist() != null && !vo.getDsilist().equals("")) {
                 vos.add(vo);
             }
         }
@@ -201,12 +254,20 @@ public class DecisionItemMakeCycle extends RecyclerView.Adapter<DecisionItemMake
     }
 
 
-
-
     /*
-    * Add Click Re Position Listener
-    * */
+     * Add Click Re Position Listener
+     * */
     private AddClickRePositionListener addClickRePositionListener;
+
+    private SucessClickListener sucessClickListener;
+
+    public SucessClickListener getSucessClickListener() {
+        return sucessClickListener;
+    }
+
+    public void setSucessClickListener(SucessClickListener sucessClickListener) {
+        this.sucessClickListener = sucessClickListener;
+    }
 
     public AddClickRePositionListener getAddClickRePositionListener() {
         return addClickRePositionListener;
@@ -216,19 +277,25 @@ public class DecisionItemMakeCycle extends RecyclerView.Adapter<DecisionItemMake
         this.addClickRePositionListener = addClickRePositionListener;
     }
 
-    public interface AddClickRePositionListener{
+    public interface AddClickRePositionListener {
         void onClick();
     }
 
-
+    public interface SucessClickListener{
+        void onClick(MemoVO vo, String text);
+        void onDelete(List<MemoVO> memos, MemoVO vo);
+    }
 
 
     /*
-    * Necessary Override Method
-    * */
+     * Necessary Override Method
+     * */
     @Override
     public int getItemCount() {
-        return vos.size() + 1;
+        if (vos != null)
+            return vos.size() + 1;
+        else
+            return memoVos.size() + 1;
     }
 
 

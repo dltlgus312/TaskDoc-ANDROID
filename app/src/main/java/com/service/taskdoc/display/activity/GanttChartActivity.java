@@ -26,11 +26,13 @@ import com.google.gson.reflect.TypeToken;
 import com.service.taskdoc.R;
 import com.service.taskdoc.database.business.ChatRoomInfo;
 import com.service.taskdoc.database.business.Tasks;
+import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.business.transfer.Project;
 import com.service.taskdoc.database.business.transfer.Task;
 import com.service.taskdoc.database.transfer.ChatRoomVO;
 import com.service.taskdoc.database.transfer.DecisionVO;
 import com.service.taskdoc.database.transfer.DocumentVO;
+import com.service.taskdoc.database.transfer.PrivateTaskVO;
 import com.service.taskdoc.database.transfer.PublicTaskVO;
 import com.service.taskdoc.display.custom.custom.chart.ChartDataSetting;
 import com.service.taskdoc.display.custom.custom.chart.DocOnTheBarItem;
@@ -38,23 +40,28 @@ import com.service.taskdoc.display.custom.custom.dialog.chat.FocusItemSelectDial
 import com.service.taskdoc.display.custom.custom.dialog.decision.DecisionItemSelectDialog;
 import com.service.taskdoc.display.custom.custom.dialog.file.DialogDocParam;
 import com.service.taskdoc.display.custom.custom.dialog.file.FileDownLoadServiceDialog;
+import com.service.taskdoc.display.custom.custom.dialog.memo.DialogMemoList;
 import com.service.taskdoc.display.custom.ganttchart.BarItem;
 import com.service.taskdoc.display.custom.ganttchart.Data;
 import com.service.taskdoc.display.custom.ganttchart.GanttChart;
 import com.service.taskdoc.display.custom.custom.chart.TaskBarItem;
 import com.service.taskdoc.display.custom.ganttchart.OnTheBarItem;
+import com.service.taskdoc.service.network.restful.service.PrivateTaskService;
+import com.service.taskdoc.service.network.restful.service.PublicTaskService;
 import com.service.taskdoc.service.system.support.StompBuilder;
+import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.service.ConvertDpPixels;
 import com.service.taskdoc.service.system.support.service.DownActionView;
 import com.service.taskdoc.service.system.support.service.KeyboardManager;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 public class GanttChartActivity extends AppCompatActivity implements
         GanttChart.SeekBarListener, GanttChart.OnTheBarDrawClickListener, GanttChart.OnTheChartDrawListener,
-        TextWatcher, View.OnClickListener, StompBuilder.SubscribeListener, View.OnKeyListener, GanttChart.OnBarClickListener {
+        TextWatcher, View.OnClickListener, StompBuilder.SubscribeListener, View.OnKeyListener, GanttChart.OnBarClickListener, GanttChart.OnBarClickModifyListener {
 
     private Project project;
 
@@ -128,11 +135,6 @@ public class GanttChartActivity extends AppCompatActivity implements
         int searchBarDP = (int) ConvertDpPixels.convertDpToPixel(40, this);
         downActionView = new DownActionView(searchBarDP);
 
-        ganttChart.setSeekBarListener(this);
-        ganttChart.setOnBarClickListener(this);
-        ganttChart.setOnTheBarDrawClickListener(this);
-        ganttChart.setOnTheChartDrawListener(this);
-
         // 인텐트 데이터 파싱
         this.project = new Gson().fromJson(getIntent().getStringExtra("project"), Project.class);
         this.chatRoomInfo = new Gson().fromJson(getIntent().getStringExtra("chatroom"), ChatRoomInfo.class);
@@ -161,7 +163,7 @@ public class GanttChartActivity extends AppCompatActivity implements
         stompBuilder.setSubscribeListener(this);
         stompBuilder.connect();
 
-        chartDataSetting();
+        chartSetting();
     }
 
     @Override
@@ -182,7 +184,22 @@ public class GanttChartActivity extends AppCompatActivity implements
 
     private ChartDataSetting chartDataSetting;
 
-    public void chartDataSetting() {
+    public void chartSetting() {
+
+        Calendar projectMinDate = Calendar.getInstance();
+        String[] date = project.getPsdate().split("-");
+        projectMinDate.set(
+                Integer.parseInt(date[0]),
+                Integer.parseInt(date[1])-1,
+                Integer.parseInt(date[2])
+        );
+        ganttChart.setSeekBarListener(this);
+        ganttChart.setOnBarClickListener(this);
+        ganttChart.setOnTheBarDrawClickListener(this);
+        ganttChart.setOnTheChartDrawListener(this);
+        ganttChart.setOnBarClickModifyListener(this);
+        ganttChart.setMinDate(projectMinDate);
+        ganttChart.setParentsOverMoveImpossible(true);
 
         chartDataSetting = new ChartDataSetting();
         chartDataSetting.setProject(project)
@@ -203,7 +220,6 @@ public class GanttChartActivity extends AppCompatActivity implements
                 ganttChart.setData(data);
             }
         });
-
     }
 
 
@@ -387,13 +403,56 @@ public class GanttChartActivity extends AppCompatActivity implements
     @Override
     public void itemSelect(BarItem barItem) {
         barItem.setHighlightCount();
+
+        TaskBarItem item = (TaskBarItem) barItem;
+        if (item.getTask().getReftcode() != 0){
+            new DialogMemoList(this)
+                    .setTask(item.getTask())
+                    .init();
+        }
+
     }
 
     @Override
-    public void itemModifyClose(BarItem barItem) {
-        Toast.makeText(this, barItem.getTitle()+"이 수정되었습니다.", Toast.LENGTH_SHORT).show();
-        ganttChart.revalidate();
+    public void itemModifyClose(List<BarItem> items) {
+        List<Task> publicVos = new ArrayList<>();
+        List<Task> privateVos = new ArrayList<>();
+
+
+        for (BarItem item : items){
+            TaskBarItem i = (TaskBarItem) item;
+            if (i.getTask().getReftcode() == 0){
+                publicVos.add(i.getTask());
+            }else {
+                privateVos.add(i.getTask());
+            }
+        }
+
+        if (publicVos.size()>0){
+            PublicTaskService service = new PublicTaskService();
+            service.work(new NetworkSuccessWork() {
+                @Override
+                public void work(Object... objects) {
+                    stompBuilder.sendMessage(StompBuilder.UPDATE, StompBuilder.PUBLICTASK, objects[0]);
+                }
+            });
+            service.updateList(publicVos);
+        }
+
+        if (privateVos.size()>0){
+            PrivateTaskService service = new PrivateTaskService();
+            service.work(new NetworkSuccessWork() {
+                @Override
+                public void work(Object... objects) {
+                    stompBuilder.sendMessage(StompBuilder.UPDATE, StompBuilder.PRIVATETASK, objects[0]);
+                }
+            });
+            service.updateList(privateVos);
+        }
+
     }
+
+
 
 
     public void docClick(DocumentVO vo) {
@@ -745,6 +804,19 @@ public class GanttChartActivity extends AppCompatActivity implements
                 Toast.makeText(this, "(자료) \"" + docVo.getDmtitle() + "\" 의 업무 위치가 변경 되었습니다."
                         , Toast.LENGTH_SHORT).show();
                 break;
+            case StompBuilder.PUBLICTASK :
+                PublicTaskVO publicTaskVO = new Gson().fromJson(object, PublicTaskVO.class);
+                for (TaskBarItem item : bars){
+                    Task vo = item.getTask();
+                    if (vo != null && vo.getReftcode() == 0 && vo.getCode() == publicTaskVO.getTcode()){
+                        vo.setTitle(publicTaskVO.getTtitle());
+                        vo.setSdate(publicTaskVO.getTsdate());
+                        vo.setEdate(publicTaskVO.getTedate());
+                        vo.setPercent(publicTaskVO.getTpercent());
+                        vo.setColor(publicTaskVO.getTcolor());
+                        item.init();
+                    }
+                }break;
         }
     }
 

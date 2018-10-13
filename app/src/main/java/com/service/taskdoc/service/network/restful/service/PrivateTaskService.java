@@ -3,6 +3,7 @@ package com.service.taskdoc.service.network.restful.service;
 import android.util.Log;
 
 import com.service.taskdoc.database.business.Tasks;
+import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.business.transfer.Task;
 import com.service.taskdoc.database.transfer.PrivateTaskVO;
 import com.service.taskdoc.service.network.restful.crud.PrivateTaskCRUD;
@@ -145,8 +146,8 @@ public class PrivateTaskService {
         request.enqueue(new Callback<Integer>() {
             @Override
             public void onResponse(Call<Integer> call, Response<Integer> response) {
-                Integer result = response.body();
-                networkSuccessWork.work(result);
+                if (response.body() == 1)
+                    networkSuccessWork.work(privateTaskVO);
             }
 
             @Override
@@ -154,6 +155,25 @@ public class PrivateTaskService {
                 Log.d(TAG, t.getMessage());
             }
         });
+    }
+
+    public void updateList(List<Task> tasks){
+        for (Task t : tasks){
+            PrivateTaskVO v = new PrivateTaskVO();
+
+            v.setTcode(t.getReftcode());
+            v.setPtcode(t.getCode());
+            v.setPttitle(t.getTitle());
+            v.setPtsdate(t.getSdate());
+            v.setPtedate(t.getEdate());
+            v.setPtcolor(t.getColor());
+            v.setPtpercent(t.getPercent());
+            v.setPtrefference(t.getRefference());
+            v.setPtsequence(t.getSequence());
+            v.setUid(UserInfo.getUid());
+
+            update(v);
+        }
     }
 
     public void delete(int ptcode){

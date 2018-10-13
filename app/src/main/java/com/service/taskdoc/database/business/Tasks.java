@@ -5,7 +5,6 @@ import com.service.taskdoc.database.transfer.PrivateTaskVO;
 import com.service.taskdoc.database.transfer.PublicTaskVO;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class Tasks {
@@ -95,34 +94,69 @@ public class Tasks {
         return isPubilc;
     }
 
-    public void addSort(Task t) {
-        if (t.getReftcode() == 0) {
-            // 공용업무 정렬
-            if (t.getCode() != t.getRefference()) {
-                Task max = null;
 
-                for (Task tt : getPublicTasks()) {
-                    if (tt.getRefference() == t.getRefference()) {
-                        if (tt.getCode() != tt.getRefference() && max == null) max = tt;
-                        else if (max != null && max.getSequence() < tt.getSequence()) max = tt;
-                    }
-                }
 
-                if (max == null) {
-                    for (Task tt : getPublicTasks()) {
-                        if (t.getRefference() == tt.getCode()) {
-                            getPublicTasks().add(getPublicTasks().indexOf(tt) + 1, t);
-                            return;
-                        }
-                    }
-                } else getPublicTasks().add(getPublicTasks().indexOf(max) + 1, t);
-            } else {
-                getPublicTasks().add(t);
-            }
+    /*
+    * Service
+    * */
+    public void addSort(Task task) {
+        if (task.getReftcode() == 0) {
+            addPositionTask(task, getPublicTasks());
         } else {
-            // 개인업무 정렬
-            getPrivateTasks().add(t);
+            addPositionTask(task, getPrivateTasks());
         }
+    }
+
+    public void addPositionTask(Task task, List<Task> tasks){
+        // 최상단 이라면 그냥 추가 하고 리턴..
+        if (task.getCode() == task.getRefference()) {
+            tasks.add(task);
+            return;
+        }
+
+        // 같은걸 참조하는 동급 업무중 순서도(시퀀스) 가 제일큰 업무 찾기
+        Task max = null;
+        for (Task t : tasks) {
+            if (t.getRefference() == task.getRefference()) {
+                max = t;
+            }
+        }
+
+        // 찾지 못했다면 부모를 찾아서 부모 바로 아래에 추가..
+        if (max == null) {
+            for (Task t : tasks) {
+                if (t.getCode() == task.getRefference()) {
+                    tasks.add(tasks.indexOf(t) + 1, task);
+                    return;
+                }
+            }
+        }
+
+        // 찾았다면 그의 자식이 있는지 재귀함수로 찾는다..
+        else {
+            Task chMax = findMaxTask(max, tasks);
+            if (chMax == null) tasks.add(tasks.indexOf(max) + 1, task);
+            else tasks.add(tasks.indexOf(chMax) + 1, task);
+        }
+    }
+
+    public Task findMaxTask(Task task, List<Task> tasks) {
+        Task max = null;
+        Task findChMax = null;
+
+        for (Task c : tasks) {
+            if (task != c && task.getCode() == c.getRefference()) {
+                max = c;
+            }
+        }
+
+        if (max != null) {
+            findChMax = findMaxTask(max, tasks);
+
+            if (findChMax == null) return max;
+            else return findChMax;
+        }
+        return null;
     }
 
 }

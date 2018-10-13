@@ -43,6 +43,9 @@ public class GanttChart extends ViewGroup {
     float positionX, positionY;
     float floodingX, floodingY;
 
+    Calendar minDate;
+
+    boolean parentsOverMoveImpossible;
 
     /*
      *
@@ -175,7 +178,12 @@ public class GanttChart extends ViewGroup {
         if (doubleClickCount > 0) doubleClickCount--;
         if (touchListenerChart.downTouch && !touchListenerChart.moving && !touchListenerChart.zooming) {
             if (longClickCount-- == 0){
-                if (isClickedItem()) closeClickeditem();
+                if (isClickedItem()) {
+                    touchListenerChart.onBarClickModifyListener.itemModifyClose(
+                            touchListenerChart.modifiedBar()
+                    );
+                    closeClickeditem();
+                }
                 longClickItem = data.onLongClick(touchListenerChart.touchX, touchListenerChart.touchY);
             }
         }
@@ -263,6 +271,17 @@ public class GanttChart extends ViewGroup {
     OnBarClickListener onBarClickListener;
 
     OnTheChartDrawListener onTheChartDrawListener;
+
+    OnBarClickModifyListener onBarClickModifyListener;
+
+    public OnBarClickModifyListener getOnBarClickModifyListener() {
+        return onBarClickModifyListener;
+    }
+
+    public void setOnBarClickModifyListener(OnBarClickModifyListener onBarClickModifyListener) {
+        this.onBarClickModifyListener = onBarClickModifyListener;
+        this.touchListenerChart.setOnBarClickModifyListener(onBarClickModifyListener);
+    }
 
     public void setSeekBarListener(SeekBarListener seekBarListener) {
         this.seekBarListener = seekBarListener;
@@ -360,6 +379,23 @@ public class GanttChart extends ViewGroup {
     /*
      *  Getter, Setter
      * */
+
+    public boolean isParentsOverMoveImpossible() {
+        return parentsOverMoveImpossible;
+    }
+
+    public void setParentsOverMoveImpossible(boolean parentsOverMoveImpossible) {
+        this.parentsOverMoveImpossible = parentsOverMoveImpossible;
+    }
+
+    public Calendar getMinDate() {
+        return minDate;
+    }
+
+    public void setMinDate(Calendar minDate) {
+        minDate.add(Calendar.DATE, 1);
+        this.minDate = minDate;
+    }
 
     public void setData(Data data) {
         this.data = data;
@@ -460,8 +496,10 @@ public class GanttChart extends ViewGroup {
 
     public interface OnBarClickListener {
         void itemSelect(BarItem barItem);
+    }
 
-        void itemModifyClose(BarItem barItem);
+    public interface OnBarClickModifyListener {
+        void itemModifyClose(List<BarItem> items);
     }
 
 }
