@@ -263,9 +263,12 @@ public class TouchListenerChart implements View.OnTouchListener {
                     if (day < 0 && compareTo(chart.longClickItem.getSdate(), day, chart.longClickItem.getParents().getSdate()) >= 0) {
                         chart.longClickItem.moveBar(day);
                         moveToChild(chart.longClickItem.getArrowList(), day);
-                    } else if (day > 0 && compareTo(chart.longClickItem.getEdate(), day, chart.longClickItem.getParents().getEdate()) <= 0) {
-                        chart.longClickItem.moveBar(day);
-                        moveToChild(chart.longClickItem.getArrowList(), day);
+                    } else if (day > 0) {
+                        int a = compareTo(chart.longClickItem.getEdate(), day, chart.longClickItem.getParents().getEdate());
+                        if (a<=0){
+                            chart.longClickItem.moveBar(day);
+                            moveToChild(chart.longClickItem.getArrowList(), day);
+                        }
                     }
                 } else {
                     chart.longClickItem.moveBar(day);
@@ -409,12 +412,13 @@ public class TouchListenerChart implements View.OnTouchListener {
     }
 
     int compareTo(Calendar target, int day, Calendar cal) {
-        // 후에 정밀한 비교... (아마도 시간단위 혹은 초단위...?)
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(target.getTime());
-        calendar.add(Calendar.DATE, day);
+        Calendar t = Calendar.getInstance();
+        Calendar c = Calendar.getInstance();
 
-        return calendar.compareTo(cal);
+        t.set(target.get(Calendar.YEAR), target.get(Calendar.MONTH), target.get(Calendar.DATE) + day, 0, 0, 0);
+        c.set(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DATE), 0, 0, 0);
+
+        return t.compareTo(c);
     }
 
     List<BarItem> modifiedBar(){

@@ -200,12 +200,7 @@ public class Element extends Fragment implements TaskCycle.ClickListener, TaskCy
             service.work(new NetworkSuccessWork() {
                 @Override
                 public void work(Object... objects) {
-                    int result = (int) objects[0];
-                    if (result != 1) {
-                        Task task = (Task) getParentFragment();
-                    } else {
-                        cycle.notifyDataSetChanged();
-                    }
+                    cycle.notifyDataSetChanged();
                 }
             });
         } else {
