@@ -12,7 +12,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class RequestBuilder {
 
 //    public static final String URI = "192.168.219.124:8080";
-    public static final String URI = "192.168.43.119:8080";
+    public static final String URI = "192.168.219.138:8080";
 //    public static final String URI = "54.180.26.251";
 
     public static final String URL = "http://" + URI;

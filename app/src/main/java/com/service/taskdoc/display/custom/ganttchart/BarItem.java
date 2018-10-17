@@ -97,6 +97,8 @@ public abstract class BarItem {
 
     private List<Integer> arrowList;
 
+    private int lastArrow;
+
     private int depthArrow;
 
     private int highLightCount;
@@ -110,6 +112,8 @@ public abstract class BarItem {
     private RectF moveTaskArc;
     private RectF sDateRect;
     private RectF eDateRect;
+
+
 
     void drawBar(float left, float top, float right, float bottom, Canvas canvas) {
         this.left = left;
@@ -484,8 +488,12 @@ public abstract class BarItem {
 
     public void addArrowList(int index) {
         if (this.arrowList == null) arrowList = new ArrayList<>();
-
         arrowList.add(index);
+        lastArrow = index;
+    }
+
+    int getLastArrow(){
+        return lastArrow;
     }
 
     public List<Integer> getArrowList() {

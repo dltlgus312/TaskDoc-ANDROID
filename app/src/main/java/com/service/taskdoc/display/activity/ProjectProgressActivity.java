@@ -19,6 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.service.taskdoc.R;
 import com.service.taskdoc.database.business.ChatRoomInfo;
 import com.service.taskdoc.database.business.Projects;
@@ -55,6 +56,7 @@ import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.listener.OnBackPressedListener;
 import com.service.taskdoc.service.system.support.StompBuilder;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -226,6 +228,7 @@ public class ProjectProgressActivity extends AppCompatActivity
         publicService.work(new NetworkSuccessWork() {
             @Override
             public void work(Object... objects) {
+                tab1.taskViewRefresh();
             }
         });
     }
@@ -535,9 +538,28 @@ public class ProjectProgressActivity extends AppCompatActivity
 
                 tasks.addSort(t);
 
-                Toast.makeText(this, "(업무) \"" + t.getTitle() + "\" 가 추가 되었습니다."
-                        , Toast.LENGTH_SHORT).show();
+                tab1.taskViewRefresh();
+                tab1.documentViewRefresh();
+                break;
+            case StompBuilder.PUBLICTASKS :
+                Type publicTaskType = new TypeToken<ArrayList<PublicTaskVO>>() {}.getType();
+                List<PublicTaskVO> vos = new Gson().fromJson(object, publicTaskType);
 
+                for (PublicTaskVO pvo : vos){
+                    if (pvo.getTsdate() == null) continue;
+                    Task puT = new Task();
+                    puT.setCode(pvo.getTcode());
+                    puT.setTitle(pvo.getTtitle());
+                    puT.setColor(pvo.getTcolor());
+                    puT.setSdate(pvo.getTsdate());
+                    puT.setEdate(pvo.getTedate());
+                    puT.setPercent(pvo.getTpercent());
+                    puT.setRefference(pvo.getTrefference());
+                    puT.setSequence(pvo.getTsequence());
+                    puT.setRefpcode(pvo.getPcode());
+
+                    tasks.addSort(puT);
+                }
                 tab1.taskViewRefresh();
                 tab1.documentViewRefresh();
                 break;
@@ -631,6 +653,9 @@ public class ProjectProgressActivity extends AppCompatActivity
         switch (type) {
             case StompBuilder.PROJECTJOIN:
                 refreshProjectJoin();
+                break;
+            case StompBuilder.PUBLICTASK:
+                refreshTask();
                 break;
         }
     }

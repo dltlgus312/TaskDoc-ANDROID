@@ -82,7 +82,7 @@ public class PrivateTaskService {
                         t.setSequence(v.getPtsequence());
                         t.setReftcode(v.getTcode());
 
-                        tasks.getPrivateTasks().add(t);
+                        tasks.addSort(t);
                     }
                     networkSuccessWork.work();
                 }

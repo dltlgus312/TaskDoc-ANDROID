@@ -254,7 +254,9 @@ public class GanttChart extends ViewGroup {
     }
 
     boolean onClick(float x, float y) {
-        return data.onClick(x, y);
+        if(data != null)
+            return data.onClick(x, y);
+        else return false;
     }
 
 

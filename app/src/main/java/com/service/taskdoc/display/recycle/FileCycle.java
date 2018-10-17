@@ -1,7 +1,11 @@
 package com.service.taskdoc.display.recycle;
 
+import android.content.Context;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.v4.content.FileProvider;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,14 +38,13 @@ public class FileCycle extends RecyclerView.Adapter<FileCycle.ViewHolder> {
     private OnClickDownload onClickDownload;
 
 
-    public FileCycle() {
+    public FileCycle(Context context) {
 
         list = new ArrayList<>();
         stackList = new ArrayList<>();
-        String rootSD = Environment.getExternalStorageDirectory().toString();
-        file = new File(rootSD);
-        setFileList(file);
 
+        file = Environment.getExternalStorageDirectory();
+        setFileList(file);
     }
 
     public FileCycle(List<Item> list) {
@@ -55,11 +58,9 @@ public class FileCycle extends RecyclerView.Adapter<FileCycle.ViewHolder> {
 
 
     public FileCycle(String path) {
-
         list = new ArrayList<>();
         stackList = new ArrayList<>();
-        String rootSD = Environment.getExternalStorageDirectory().toString();
-        file = new File(rootSD + "/" + path);
+        file = new File(Environment.getExternalStorageDirectory().getPath(), File.separator + path);
         setFileList(file);
     }
 

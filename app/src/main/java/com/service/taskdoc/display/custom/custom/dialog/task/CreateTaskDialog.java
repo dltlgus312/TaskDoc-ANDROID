@@ -8,19 +8,24 @@ import android.graphics.Color;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.applandeo.materialcalendarview.CalendarView;
 import com.applandeo.materialcalendarview.DatePicker;
 import com.applandeo.materialcalendarview.builders.DatePickerBuilder;
 import com.applandeo.materialcalendarview.listeners.OnSelectDateListener;
 import com.service.taskdoc.R;
+import com.service.taskdoc.database.business.Methods;
 import com.service.taskdoc.database.business.Projects;
 import com.service.taskdoc.database.business.UserInfo;
 import com.service.taskdoc.database.business.transfer.Project;
 import com.service.taskdoc.database.business.transfer.Task;
+import com.service.taskdoc.database.transfer.MethodListVO;
+import com.service.taskdoc.database.transfer.MethodVO;
 import com.service.taskdoc.database.transfer.PrivateTaskVO;
 import com.service.taskdoc.database.transfer.PublicTaskVO;
 
+import java.lang.reflect.Method;
 import java.util.Calendar;
 import java.util.List;
 
@@ -109,6 +114,52 @@ public class CreateTaskDialog {
         builder.show();
     }
 
+    void myMethodTask() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("리스트 선택");
+
+        ArrayAdapter<String> types = new ArrayAdapter<>(
+                context, android.R.layout.simple_selectable_list_item);
+
+        for (MethodListVO vo : Methods.getMethodLists()) types.add(vo.getMltitle());
+
+        builder.setAdapter(types, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                datePicker(Methods.getMethodLists().get(i));
+            }
+        });
+
+        builder.show();
+    }
+
+    void datePicker(MethodListVO vo){
+
+        List<Calendar> selectedDates = null;
+
+        OnSelectDateListener listener = new OnSelectDateListener() {
+            @Override
+            public void onSelect(List<Calendar> calendar) {
+                methodListCreateTask(vo, calendar.get(0));
+            }
+        };
+
+        String[] s = project.getPsdate().split("-");
+
+        Calendar sC = Calendar.getInstance();
+
+        sC.set(Integer.parseInt(s[0]), Integer.parseInt(s[1]) - 1, Integer.parseInt(s[2]) - 1);
+
+        DatePickerBuilder builder = new DatePickerBuilder(context, listener)
+                .pickerType(CalendarView.ONE_DAY_PICKER).headerColor(R.color.colorPrimary);
+
+        builder.minimumDate(sC);
+        DatePicker datePicker = builder.build();
+        datePicker.show();
+
+        Toast.makeText(context, "시작 날짜를 선택 해주세요", Toast.LENGTH_SHORT).show();
+    }
+
     void publicTask() {
         showCreateTaskView(true);
     }
@@ -130,8 +181,23 @@ public class CreateTaskDialog {
     }
 
     // 내 방법론 리스트 선택
-    void myMethodTask() {
+    void methodListCreateTask(MethodListVO vo, Calendar calendar){
+        DialogMethodCreateTask.OnPositiveClickListener listener
+                = new DialogMethodCreateTask.OnPositiveClickListener() {
+            @Override
+            public void getTask(List<Task> taskList) {
+                if (taskEventListener != null){
+                    taskEventListener.methodListCreate(taskList);
+                }
+            }
+        };
 
+        new DialogMethodCreateTask(context)
+                .setPcode(project.getPcode())
+                .setMbcode(vo.getMbcode())
+                .setSdate(calendar)
+                .setOnPositiveClickListener(listener)
+                .init().show();
     }
 
     // 개인, 공용 생성
@@ -360,6 +426,8 @@ public class CreateTaskDialog {
         void publicTaskCreate(PublicTaskVO vo);
 
         void privateTaskCreate(PrivateTaskVO vo);
+
+        void methodListCreate(List<Task> vos);
     }
 
 }

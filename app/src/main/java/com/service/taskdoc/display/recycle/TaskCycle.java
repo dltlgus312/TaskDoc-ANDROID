@@ -168,6 +168,7 @@ public class TaskCycle extends RecyclerView.Adapter<TaskCycle.ViewHolder> {
 
         copyTasks.clear();
         stack.clear();
+        this.isGoBack = false;
 
         if (tasks.isPubilc()) {
             if (output) {

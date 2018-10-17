@@ -34,6 +34,9 @@ import com.service.taskdoc.service.system.support.StompBuilder;
 import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
 import com.service.taskdoc.service.system.support.listener.OnBackPressedListener;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import petrov.kristiyan.colorpicker.ColorPicker;
 
 public class Task extends Fragment implements OnBackPressedListener {
@@ -52,7 +55,6 @@ public class Task extends Fragment implements OnBackPressedListener {
     private Element element = new Element();
     private Chart chart = new Chart();
 
-    private PublicTaskService publicService;
     private PrivateTaskService privateService;
 
     private Tasks tasks;
@@ -130,10 +132,7 @@ public class Task extends Fragment implements OnBackPressedListener {
             }
         });
 
-        publicService = new PublicTaskService();
         privateService = new PrivateTaskService();
-
-        publicService.setTasks(tasks);
         privateService.setTasks(tasks);
 
         return view;
@@ -165,8 +164,9 @@ public class Task extends Fragment implements OnBackPressedListener {
                 new CreateTaskDialog.TaskEventListener() {
                     @Override
                     public void publicTaskCreate(PublicTaskVO vo) {
-                        publicService.create(vo);
-                        publicService.work(new NetworkSuccessWork() {
+                        PublicTaskService service = new PublicTaskService();
+                        service.create(vo);
+                        service.work(new NetworkSuccessWork() {
                             @Override
                             public void work(Object... objects) {
                                 ((ProjectProgressActivity) getActivity()).stompBuilder.sendMessage(
@@ -187,6 +187,30 @@ public class Task extends Fragment implements OnBackPressedListener {
                                 Toast.makeText(getContext(), "(업무) \"" + vo.getPttitle() + "\" 가 추가 되었습니다."
                                         , Toast.LENGTH_SHORT).show();
                                 element.dataChange();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void methodListCreate(List<com.service.taskdoc.database.business.transfer.Task> vos) {
+                        Tasks tasks = new Tasks();
+                        PublicTaskService service = new PublicTaskService();
+                        service.setTasks(tasks);
+
+                        service.createMulti(vos);
+                        service.work(new NetworkSuccessWork() {
+                            @Override
+                            public void work(Object... objects) {
+                                List<PublicTaskVO> vos = new ArrayList<>();
+                                for (com.service.taskdoc.database.business.transfer.Task t : tasks.getPublicTasks()){
+                                    PublicTaskVO v = Tasks.publicConverter(t);
+                                    vos.add(v);
+                                }
+                                ((ProjectProgressActivity) getActivity()).stompBuilder.sendMessage(
+                                        StompBuilder.INSERT,
+                                        StompBuilder.PUBLICTASKS,
+                                        vos
+                                );
                             }
                         });
                     }

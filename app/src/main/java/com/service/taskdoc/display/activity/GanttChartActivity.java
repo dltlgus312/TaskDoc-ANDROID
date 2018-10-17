@@ -159,10 +159,11 @@ public class GanttChartActivity extends AppCompatActivity implements
         }.getType();
         this.chatrooms = new Gson().fromJson(getIntent().getStringExtra("chatrooms"), chatroomtype);
 
-        stompBuilder = new StompBuilder(project.getPcode());
-        stompBuilder.setSubscribeListener(this);
-        stompBuilder.connect();
-
+        if (project != null){
+            stompBuilder = new StompBuilder(project.getPcode());
+            stompBuilder.setSubscribeListener(this);
+            stompBuilder.connect();
+        }
         chartSetting();
     }
 
@@ -173,6 +174,7 @@ public class GanttChartActivity extends AppCompatActivity implements
         } else if (ganttChart.isClickedItem()) {
             ganttChart.closeClickeditem();
         } else {
+            if (project != null)
             stompBuilder.disconnect();
             finish();
         }
@@ -186,28 +188,45 @@ public class GanttChartActivity extends AppCompatActivity implements
 
     public void chartSetting() {
 
-        Calendar projectMinDate = Calendar.getInstance();
-        String[] date = project.getPsdate().split("-");
-        projectMinDate.set(
-                Integer.parseInt(date[0]),
-                Integer.parseInt(date[1])-1,
-                Integer.parseInt(date[2])
-        );
-        ganttChart.setSeekBarListener(this);
-        ganttChart.setOnBarClickListener(this);
-        ganttChart.setOnTheBarDrawClickListener(this);
-        ganttChart.setOnTheChartDrawListener(this);
-        ganttChart.setOnBarClickModifyListener(this);
-        ganttChart.setMinDate(projectMinDate);
-        ganttChart.setParentsOverMoveImpossible(true);
+        if (project != null){
+            Calendar projectMinDate = Calendar.getInstance();
+            String[] date = project.getPsdate().split("-");
+            projectMinDate.set(
+                    Integer.parseInt(date[0]),
+                    Integer.parseInt(date[1])-1,
+                    Integer.parseInt(date[2])
+            );
+            ganttChart.setSeekBarListener(this);
+            ganttChart.setOnBarClickListener(this);
+            ganttChart.setOnTheBarDrawClickListener(this);
+            ganttChart.setOnTheChartDrawListener(this);
+            ganttChart.setOnBarClickModifyListener(this);
+            ganttChart.setMinDate(projectMinDate);
+            ganttChart.setParentsOverMoveImpossible(true);
 
-        chartDataSetting = new ChartDataSetting();
-        chartDataSetting.setProject(project)
-                .setTasks(tasks)
-                .setDocuments(documents)
-                .setDecisions(decisions)
-                .setChatrooms(chatrooms)
-                .init();
+            chartDataSetting = new ChartDataSetting();
+            chartDataSetting.setProject(project)
+                    .setTasks(tasks)
+                    .setDocuments(documents)
+                    .setDecisions(decisions)
+                    .setChatrooms(chatrooms)
+                    .init();
+        } else {
+            ganttChart.setSeekBarListener(this);
+            ganttChart.setOnBarClickListener(this);
+            ganttChart.setOnTheBarDrawClickListener(this);
+            ganttChart.setOnTheChartDrawListener(this);
+            ganttChart.setOnBarClickModifyListener(this);
+            ganttChart.setParentsOverMoveImpossible(true);
+
+            chartDataSetting = new ChartDataSetting();
+            chartDataSetting.setTasks(tasks)
+                    .setDocuments(documents)
+                    .setDecisions(decisions)
+                    .setChatrooms(chatrooms)
+                    .init();
+        }
+
 
         chartDataSetting.setDataSettingListener(new ChartDataSetting.DataSettingListener() {
             @Override
@@ -444,7 +463,8 @@ public class GanttChartActivity extends AppCompatActivity implements
             service.work(new NetworkSuccessWork() {
                 @Override
                 public void work(Object... objects) {
-                    stompBuilder.sendMessage(StompBuilder.UPDATE, StompBuilder.PRIVATETASK, objects[0]);
+                    if (project != null)
+                        stompBuilder.sendMessage(StompBuilder.UPDATE, StompBuilder.PRIVATETASK, objects[0]);
                 }
             });
             service.updateList(privateVos);
@@ -745,9 +765,26 @@ public class GanttChartActivity extends AppCompatActivity implements
 
                 tasks.addSort(t);
                 chartDataSetting.init();
+                break;
+            case StompBuilder.PUBLICTASKS :
+                Type publicTaskType = new TypeToken<ArrayList<PublicTaskVO>>() {}.getType();
+                List<PublicTaskVO> vos = new Gson().fromJson(object, publicTaskType);
 
-                Toast.makeText(this, "(업무) \"" + t.getTitle() + "\" 가 추가 되었습니다."
-                        , Toast.LENGTH_SHORT).show();
+                for (PublicTaskVO pvo : vos){
+                    Task puT = new Task();
+                    puT.setCode(pvo.getTcode());
+                    puT.setTitle(pvo.getTtitle());
+                    puT.setColor(pvo.getTcolor());
+                    puT.setSdate(pvo.getTsdate());
+                    puT.setEdate(pvo.getTedate());
+                    puT.setPercent(pvo.getTpercent());
+                    puT.setRefference(pvo.getTrefference());
+                    puT.setSequence(pvo.getTsequence());
+                    puT.setRefpcode(pvo.getPcode());
+
+                    tasks.addSort(puT);
+                }
+                chartDataSetting.init();
                 break;
         }
     }
@@ -821,7 +858,12 @@ public class GanttChartActivity extends AppCompatActivity implements
     }
 
     private void deleteTopic(String type, String object) {
+        switch (type) {
 
+            case StompBuilder.PUBLICTASK:
+
+                break;
+        }
     }
 
 

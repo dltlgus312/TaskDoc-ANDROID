@@ -6,10 +6,12 @@ import android.content.DialogInterface;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 
+import com.service.taskdoc.R;
 import com.service.taskdoc.display.custom.ganttchart.Line;
 import com.service.taskdoc.display.recycle.FileCycle;
 
@@ -26,7 +28,10 @@ public class DialogFilePicker extends AlertDialog.Builder {
     public DialogFilePicker(Context context) {
         super(context);
 
-        fileCycle = new FileCycle();
+        LayoutInflater layoutInflater = LayoutInflater.from(context);
+        View view = LayoutInflater.from(context).inflate(R.layout.custom_file_upload_view, null);
+
+        fileCycle = new FileCycle(context);
         fileCycle.setOnClickListener(new FileCycle.OnClickListener() {
             @Override
             public void folderClick(FileCycle.Item item) {
@@ -43,14 +48,13 @@ public class DialogFilePicker extends AlertDialog.Builder {
             }
         });
 
-        RecyclerView recyclerView = new RecyclerView(context);
-        RecyclerView.LayoutManager layoutManager = new GridLayoutManager(context, 3);
+        RecyclerView recyclerView = view.findViewById(R.id.recycle);
+        RecyclerView.LayoutManager layoutManager = new GridLayoutManager(context, 4);
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(fileCycle);
 
 
-        Button back = new Button(context);
-        back.setText("뒤로가기");
+        Button back =view.findViewById(R.id.back);
         back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -60,14 +64,7 @@ public class DialogFilePicker extends AlertDialog.Builder {
             }
         });
 
-        LinearLayout linearLayout = new LinearLayout(context);
-        linearLayout.setOrientation(LinearLayout.VERTICAL);
-        linearLayout.setPadding(10, 10, 10, 10);
-
-        linearLayout.addView(recyclerView);
-        linearLayout.addView(back);
-
-        this.setView(linearLayout);
+        this.setView(view);
         this.setTitle("파일 목록");
 
         setPositiveButton("다음", new DialogInterface.OnClickListener() {

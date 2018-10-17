@@ -181,6 +181,47 @@ public class PublicTaskService {
         });
     }
 
+    public void createMulti(List<Task> task){
+
+        List<PublicTaskVO> vos = new ArrayList<>();
+
+        for (Task t : task){
+            PublicTaskVO v = Tasks.publicConverter(t);
+            vos.add(v);
+        }
+
+        Call<List<PublicTaskVO>> request = service.createPublicTaskMulti(vos);
+        request.enqueue(new Callback<List<PublicTaskVO>>() {
+            @Override
+            public void onResponse(Call<List<PublicTaskVO>> call, Response<List<PublicTaskVO>> response) {
+
+                for (PublicTaskVO vo : response.body()) {
+                    Task t = new Task();
+
+                    PublicTaskVO v = vo;
+                    t.setCode(v.getTcode());
+                    t.setTitle(v.getTtitle());
+                    t.setColor(v.getTcolor());
+                    t.setSdate(v.getTsdate());
+                    t.setEdate(v.getTedate());
+                    t.setPercent(v.getTpercent());
+                    t.setRefference(v.getTrefference());
+                    t.setSequence(v.getTsequence());
+                    t.setRefpcode(v.getPcode());
+
+                    tasks.addSort(t);
+                }
+
+                networkSuccessWork.work();
+            }
+
+            @Override
+            public void onFailure(Call<List<PublicTaskVO>> call, Throwable t) {
+
+            }
+        });
+    }
+
     public void update(PublicTaskVO publicTaskVO){
         Call<Integer> request = service.updatePublicTask(publicTaskVO);
         request.enqueue(new Callback<Integer>() {

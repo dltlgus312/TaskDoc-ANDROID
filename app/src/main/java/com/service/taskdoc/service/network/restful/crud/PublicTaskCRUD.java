@@ -28,6 +28,9 @@ public interface PublicTaskCRUD {
     @POST("/publictask")
     Call<Integer> createPublicTask(@Body PublicTaskVO publicTaskVO);
 
+    @POST("/publictask/multiple")
+    Call<List<PublicTaskVO>> createPublicTaskMulti(@Body List<PublicTaskVO> vos);
+
     @PUT("/publictask")
     Call<Integer> updatePublicTask(@Body PublicTaskVO publicTaskVO);
 

@@ -99,8 +99,19 @@ public class Data {
 
             if (b.isDivision()) continue;
 
-            b.drawBar(dateToPositionX(b.getSdate()), getPositionY(i),
-                    dateToPositionX(b.getEdate()), getPositionY(i + 1) - 10, canvas);
+            float top = getPositionY(i);
+            float bot = 0;
+
+            if (b.getArrowList() != null) {
+                bot = getPositionY(b.getLastArrow()) + 10;
+            }else {
+                bot = getPositionY(i + 1) - 10;
+            }
+
+            if (top > chart.getHeight()) continue;
+            if (bot < chart.getY()) continue;
+
+            b.drawBar(dateToPositionX(b.getSdate()), top, dateToPositionX(b.getEdate()), getPositionY(i + 1) - 10, canvas);
 
             if (b.getArrowList() != null) {
                 for (int j : b.getArrowList()) {
@@ -308,8 +319,8 @@ public class Data {
             }
 
             // 부모 등록해주기...
-            if (item.getArrowList() != null){
-                for (int index : item.getArrowList()){
+            if (item.getArrowList() != null) {
+                for (int index : item.getArrowList()) {
                     BarItem i = bars.get(index);
                     i.setParents(item);
                 }

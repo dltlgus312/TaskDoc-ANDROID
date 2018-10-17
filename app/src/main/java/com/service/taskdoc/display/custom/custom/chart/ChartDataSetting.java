@@ -75,7 +75,7 @@ public class ChartDataSetting {
         bars = new ArrayList<>();
         onTheBars = new ArrayList<>();
 
-        if (tasks.getPublicTasks().size() == 0) {
+        if (tasks.getPublicTasks() == null) {
             // 개인업무 리스트에서 호출할 경우
             int tcode = 0;
             for (Task t : tasks.getPrivateTasks()) {
@@ -111,9 +111,9 @@ public class ChartDataSetting {
                     }
                 }
             }
-            arrowHierarchy(); // 계층 화살표
         }
 
+        arrowHierarchy(); // 계층 화살표
 
         if (dataSettingListener != null){
             dataSettingListener.data(bars, onTheBars);

@@ -42,6 +42,7 @@ public class StompBuilder{
     public final static String NOTICE = "noticevo";
     public final static String PRIVATETASK = "privatetaskvo";
     public final static String PUBLICTASK = "publictaskvo";
+    public final static String PUBLICTASKS = "publictasks";
     public final static String USERINFO = "userinfovo";
     public final static String VOTER = "votervo";
     public final static String PROJECT = "projectvo";

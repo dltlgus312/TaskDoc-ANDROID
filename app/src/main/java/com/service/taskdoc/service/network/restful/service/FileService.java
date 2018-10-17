@@ -1,10 +1,13 @@
 package com.service.taskdoc.service.network.restful.service;
 
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
 
 import com.service.taskdoc.database.transfer.FileVO;
@@ -124,7 +127,11 @@ public class FileService {
     private void writeResponseBodyToDisk(ResponseBody body, String fname) {
         try {
             // todo change the file location/name according to your needs
-            File file = new File(Environment.getExternalStorageDirectory() + File.separator + "Download", fname);
+            File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath(), fname);
+
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                file = new File(Environment.getExternalStorageDirectory().getPath(), fname);
+            }
 
             InputStream inputStream = null;
             OutputStream outputStream = null;
@@ -165,7 +172,7 @@ public class FileService {
                 outputStream.flush();
 
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.d(TAG, e.getMessage());
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
@@ -189,7 +196,7 @@ public class FileService {
                 });
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.d(TAG, e.getMessage());
             handler.post(new Runnable() {
                 @Override
                 public void run() {

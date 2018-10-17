@@ -63,19 +63,13 @@ public class ProjectActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        privateService = new PrivateTaskService();
-        privateService.setTasks(tasks);
-        privateService.list(UserInfo.getUid());
-        privateService.work(new NetworkSuccessWork() {
-            @Override
-            public void work(Object... objects) {
-                taskView.setTasks(tasks);
-            }
-        });
-
         getSupportFragmentManager().beginTransaction().replace(R.id.content_project, new Project()).addToBackStack(null).commit();
         setTitle(TITLE_PROJECT);
 
+        taskView.setTasks(tasks);
+
+        privateService = new PrivateTaskService();
+        privateService.setTasks(tasks);
     }
 
     public void setOnBackPressedListener(OnBackPressedListener onBackPressedListener){
@@ -118,6 +112,19 @@ public class ProjectActivity extends AppCompatActivity
                 t.start();
             }
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        tasks.getPrivateTasks().clear();
+        privateService.list(UserInfo.getUid());
+        privateService.work(new NetworkSuccessWork() {
+            @Override
+            public void work(Object... objects) {
+                taskView.datachange();
+            }
+        });
     }
 
     @Override

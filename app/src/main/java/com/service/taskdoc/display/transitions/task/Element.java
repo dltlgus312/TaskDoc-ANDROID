@@ -26,12 +26,14 @@ import com.service.taskdoc.R;
 import com.service.taskdoc.database.business.Projects;
 import com.service.taskdoc.database.business.Tasks;
 import com.service.taskdoc.database.transfer.MemoVO;
+import com.service.taskdoc.database.transfer.PublicTaskVO;
 import com.service.taskdoc.display.activity.ProjectProgressActivity;
 import com.service.taskdoc.display.recycle.MemoCycle;
 import com.service.taskdoc.display.recycle.TaskCycle;
 import com.service.taskdoc.service.network.restful.service.MemoService;
 import com.service.taskdoc.service.network.restful.service.PrivateTaskService;
 import com.service.taskdoc.service.network.restful.service.PublicTaskService;
+import com.service.taskdoc.service.system.support.StompBuilder;
 import com.service.taskdoc.service.system.support.service.ConvertDpPixels;
 import com.service.taskdoc.service.system.support.service.KeyboardManager;
 import com.service.taskdoc.service.system.support.listener.NetworkSuccessWork;
@@ -158,18 +160,17 @@ public class Element extends Fragment implements TaskCycle.ClickListener, TaskCy
 
         if (isPublic) {
             PublicTaskService service = new PublicTaskService();
-            service.delete(task.getCode());
+            PublicTaskVO vo = new PublicTaskVO();
+            vo.setTcode(task.getCode());
+            service.delete(vo.getTcode());
             service.work(new NetworkSuccessWork() {
                 @Override
                 public void work(Object... objects) {
-                    int result = (int) objects[0];
-                    if (result != 1) {
-                        Task task = (Task) getParentFragment();
-                    } else {
-                        tasks.getPublicTasks().remove(task);
-                        cycle.removeCopyTask(task);
-                        cycle.notifyDataSetChanged();
-                    }
+                    ((ProjectProgressActivity)getActivity()).stompBuilder.sendMessage(
+                            StompBuilder.DELETE,
+                            StompBuilder.PUBLICTASK,
+                            vo
+                    );
                 }
             });
         } else {
@@ -200,7 +201,11 @@ public class Element extends Fragment implements TaskCycle.ClickListener, TaskCy
             service.work(new NetworkSuccessWork() {
                 @Override
                 public void work(Object... objects) {
-                    cycle.notifyDataSetChanged();
+                    ((ProjectProgressActivity)getActivity()).stompBuilder.sendMessage(
+                            StompBuilder.UPDATE,
+                            StompBuilder.PUBLICTASK,
+                            objects[0]
+                    );
                 }
             });
         } else {
@@ -217,10 +222,9 @@ public class Element extends Fragment implements TaskCycle.ClickListener, TaskCy
 
     public void dataChange() {
         if (cycle != null) {
-            cycle.goTo(0);
             recyclerView.scheduleLayoutAnimation();
             path.removeViews(+1, path.getChildCount() - 1);
-            cycle.notifyDataSetChanged();
+            cycle.init();
         }
     }
 
