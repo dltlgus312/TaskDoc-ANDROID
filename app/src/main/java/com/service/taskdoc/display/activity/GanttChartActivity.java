@@ -727,7 +727,7 @@ public class GanttChartActivity extends AppCompatActivity implements
         switch (type) {
             case StompBuilder.DOCUMENT:
                 DocumentVO docVo = new Gson().fromJson(object, DocumentVO.class);
-                if (docVo.getCrcode() != chatRoomInfo.getChatRoomVO().getCrcode()) return;
+                if(docVo == null || docVo.getCrcode() != chatRoomInfo.getChatRoomVO().getCrcode()) return;
                 documents.add(docVo);
                 chartDataSetting.init();
                 Toast.makeText(this, "(파일) \"" + docVo.getDmtitle() + "\" 가 추가 되었습니다."
